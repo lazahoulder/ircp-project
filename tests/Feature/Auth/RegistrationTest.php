@@ -24,11 +24,12 @@ class RegistrationTest extends TestCase
             ->set('email', 'test@example.com')
             ->set('password', 'password')
             ->set('password_confirmation', 'password')
+            ->set('nomination_etablissement', 'nomination')
             ->call('register');
 
         $response
             ->assertHasNoErrors()
-            ->assertRedirect(route('dashboard', absolute: false));
+            ->assertRedirect(route('moncompte.profile', absolute: false));
 
         $this->assertAuthenticated();
     }

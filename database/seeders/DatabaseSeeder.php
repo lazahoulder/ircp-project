@@ -18,6 +18,16 @@ class DatabaseSeeder extends Seeder
         User::factory()->create([
             'name' => 'Test User',
             'email' => 'test@example.com',
+            'isAdmin' => true,
         ]);
+
+        // Run the EntiteEmmeteursSeeder to create entities, formations, and formation reels
+        $this->call(EntiteEmmeteursSeeder::class);
+
+        // Run the PersonneCertifiesSeeder to create personne certifies
+        $this->call(PersonneCertifiesSeeder::class);
+
+        // Run the CertificateSeeder to create certificates
+        $this->call(CertificateSeeder::class);
     }
 }

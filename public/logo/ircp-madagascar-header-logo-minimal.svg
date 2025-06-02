@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="116" height="50" viewBox="0 0 116 50">
+  <!-- Simple horizontal line -->
+  <line x1="10" y1="25" x2="40" y2="25" stroke="#343a40" stroke-width="1.5"/>
+
+  <!-- IRCP text -->
+  <text x="25" y="20" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" fill="#343a40">IRCP</text>
+  <text x="25" y="32" font-family="Arial, sans-serif" font-size="5" font-weight="bold" text-anchor="middle" fill="#0d253f">MADAGASCAR</text>
+
+  <!-- Ultra simplified Logotype -->
+  <g transform="translate(45, 20)">
+    <path fill="#343a40" d="M0 0L2 0L2 10L0 10L0 0ZM5 10L3 10L3 0L7 0Q8 0 9 0.5Q10 1 10.5 2Q11 3 11 4L11 4Q11 5 10.5 6Q10 7 9 7.5Q8 8 7 8L7 8L4 8L4 6L7 6Q8 6 8.5 5.5Q9 5 9 4L9 4Q9 3 8.5 2.5Q8 2 7 2L7 2L5 2L5 10ZM12 10L10 10L7 5L9 5L12 10ZM16 10L16 10Q14 10 13 9Q12 8 11.5 6.5Q11 5 11 4L11 4Q11 3 11.5 1.5Q12 0 13 -1Q14 -2 16 -2L16 -2Q18 -2 19 -1Q20 0 20.5 1.5Q21 3 21 4L21 4Q21 5 20.5 6.5Q20 8 19 9Q18 10 16 10ZM23 10L21 10L21 0L25 0Q27 0 28 1Q29 2 29 4L29 4Q29 6 28 7Q27 8 25 8L25 8L23 8L23 10Z"/>
+  </g>
+</svg>

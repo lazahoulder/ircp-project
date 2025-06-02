@@ -1,10 +1,12 @@
 @import 'tailwindcss';
+@import "../../node_modules/preline/variants.css";
 @import '../../vendor/livewire/flux/dist/flux.css';
 
 @source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../vendor/livewire/flux-pro/stubs/**/*.blade.php';
 @source '../../vendor/livewire/flux/stubs/**/*.blade.php';
+@source "../../node_modules/preline/dist/*.js";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -33,6 +35,28 @@
         --color-accent: var(--color-white);
         --color-accent-content: var(--color-white);
         --color-accent-foreground: var(--color-neutral-800);
+    }
+
+    .dark-variant {
+        --color-accent: var(--color-indigo-400);
+        --color-accent-content: var(--color-indigo-400);
+        --color-accent-foreground: var(--color-neutral-900);
+        --color-bg-primary: var(--color-neutral-900);
+        --color-bg-secondary: var(--color-neutral-800);
+        --color-text-primary: var(--color-white);
+        --color-text-secondary: var(--color-neutral-300);
+        --color-border: var(--color-neutral-700);
+    }
+
+    .light-variant {
+        --color-accent: var(--color-blue-600);
+        --color-accent-content: var(--color-blue-600);
+        --color-accent-foreground: var(--color-white);
+        --color-bg-primary: var(--color-white);
+        --color-bg-secondary: var(--color-zinc-50);
+        --color-text-primary: var(--color-zinc-900);
+        --color-text-secondary: var(--color-zinc-600);
+        --color-border: var(--color-zinc-200);
     }
 }
 
@@ -64,3 +88,20 @@ select:focus[data-flux-control] {
 /* \[:where(&)\]:size-4 {
     @apply size-4;
 } */
+
+@layer utilities {
+    .animate-fade-in {
+        @apply opacity-0 translate-y-4 transition-all duration-1000 ease-out;
+        animation: fadeIn 1s ease-out forwards;
+    }
+    .animate-fade-in.delay-150 {
+        animation-delay: 0.15s;
+    }
+}
+
+@keyframes fadeIn {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

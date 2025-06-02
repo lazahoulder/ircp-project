@@ -21,6 +21,7 @@ class AuthenticationTest extends TestCase
     public function test_users_can_authenticate_using_the_login_screen(): void
     {
         $user = User::factory()->create();
+        $user->update(['isAdmin' => true]);
 
         $response = LivewireVolt::test('auth.login')
             ->set('email', $user->email)

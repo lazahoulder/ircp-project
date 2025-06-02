@@ -1,6 +1,9 @@
 <?php
 
+use App\Events\RegisterProceced;
+use App\Models\EntiteEmmeteurs;
 use App\Models\User;
+use App\Services\EntiteEmmeteursService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -13,6 +16,8 @@ new #[Layout('components.layouts.auth')] class extends Component {
     public string $email = '';
     public string $password = '';
     public string $password_confirmation = '';
+    public string $nomination_etablissement = '';
+
 
     /**
      * Handle an incoming registration request.
@@ -23,6 +28,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
             'password' => ['required', 'string', 'confirmed', Rules\Password::defaults()],
+            'nomination_etablissement' => ['required', 'string'],
         ]);
 
         $validated['password'] = Hash::make($validated['password']);
@@ -30,16 +36,17 @@ new #[Layout('components.layouts.auth')] class extends Component {
         event(new Registered(($user = User::create($validated))));
 
         Auth::login($user);
+        event(new RegisterProceced($entite = EntiteEmmeteurs::create(['nomination' => $this->nomination_etablissement])));
 
-        $this->redirectIntended(route('dashboard', absolute: false), navigate: true);
+        $this->redirectIntended(route('moncompte.profile', absolute: false), navigate: true);
     }
 }; ?>
 
 <div class="flex flex-col gap-6">
-    <x-auth-header :title="__('Create an account')" :description="__('Enter your details below to create your account')" />
+    <x-auth-header :title="__('Créer un compte')" :description="__('Ajouter les détails de votre compte')"/>
 
     <!-- Session Status -->
-    <x-auth-session-status class="text-center" :status="session('status')" />
+    <x-auth-session-status class="text-center" :status="session('status')"/>
 
     <form wire:submit="register" class="flex flex-col gap-6">
         <!-- Name -->
@@ -84,6 +91,18 @@ new #[Layout('components.layouts.auth')] class extends Component {
             :placeholder="__('Confirm password')"
             viewable
         />
+
+        <!-- Confirm Password -->
+        <flux:input
+            wire:model="nomination_etablissement"
+            :label="__('Votre établissement')"
+            type="text"
+            required
+            autocomplete="Votre établissement"
+            :placeholder="__('Votre établissement')"
+            viewable
+        />
+
 
         <div class="flex items-center justify-end">
             <flux:button type="submit" variant="primary" class="w-full">
