@@ -3,5 +3,5 @@
         ['label' => 'Centres Accrédités', 'url' => route('centres')]
     ]])
 
-    <livewire:list-entite-emmeteurs />
+    <livewire:list-entite-emmeteurs has-search="true" />
 </x-layouts.site.app>

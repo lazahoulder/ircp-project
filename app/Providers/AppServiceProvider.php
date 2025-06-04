@@ -22,7 +22,7 @@ class AppServiceProvider extends ServiceProvider
     {
         // Force HTTPS for all URLs when not in local environment
         if (request()->getHost() != 'localhost') {
-            URL::forceScheme('https');
+            //URL::forceScheme('https');
         }
     }
 }

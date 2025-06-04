@@ -4,8 +4,11 @@ namespace App\Livewire;
 
 use App\Models\EntiteEmmeteurs;
 use App\Services\EntiteEmmeteursService;
+use Livewire\Attributes\Layout;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
+#[Layout('components.layouts.site.app', ['title' => 'Détails du Centre - IRCP'])]
 class CenterDetails extends Component
 {
     public $centerId;

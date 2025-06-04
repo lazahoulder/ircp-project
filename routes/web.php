@@ -15,9 +15,7 @@ Route::get('/centres', function () {
     return view('site.centres');
 })->name('centres');
 
-Route::get('/centres/{id}', function ($id) {
-    return view('site.centre-details', ['id' => $id]);
-})->name('centre.details');
+Volt::route('/centres/{id}', 'center-details')->name('centre.details');
 
 Route::get('/about', function () {
     return view('site.about');
@@ -30,17 +28,17 @@ Route::get('/contact', function () {
 Route::get('/download-certificate/{id}', [\App\Http\Controllers\CertificateController::class, 'download'])
     ->name('certificate.download');
 
-Route::view('dashboard', 'dashboard')
+/*Route::view('dashboard', 'dashboard')
     ->middleware(['auth', 'verified'])
-    ->name('dashboard');
+    ->name('dashboard');*/
 
 Route::middleware(['auth'])->prefix('platform-admin')->group(function () {
     Route::redirect('', 'dashboard');
 
     Route::view('dashboard', 'dashboard')
-        ->name('dashboard');
+        ->name('admin.dashboard');
 
-    Volt::route('formations', 'formation.gestion-formations')->name('admin.formations');
+    Volt::route('etablissements', 'etablissement.gestion-etablissement')->name('admin.etablissements');;
 });
 
 Route::middleware(['auth'])->group(function () {

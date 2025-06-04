@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Services\EntiteEmmeteursService;
+use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -12,11 +13,18 @@ class ListEntiteEmmeteurs extends Component
 
     protected EntiteEmmeteursService $service;
 
+    public bool $hasSearch = true;
+
     public $query = '';
 
     public function boot(EntiteEmmeteursService $service)
     {
         $this->service = $service;
+    }
+
+    public function mount($hasSearch = true)
+    {
+        $this->hasSearch = $hasSearch;
     }
 
     public function search()
