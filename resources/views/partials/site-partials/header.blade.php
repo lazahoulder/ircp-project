@@ -56,7 +56,7 @@
                                 <flux:menu.separator/>
                                 @if(auth()->user()->isAdmin)
                                     <flux:menu.radio.group>
-                                        <flux:menu.item :href="route('dashboard')" icon="layout-grid"
+                                        <flux:menu.item :href="route('admin.dashboard')" icon="layout-grid"
                                                         wire:navigate>{{ __('Tableau de bord') }}</flux:menu.item>
                                     </flux:menu.radio.group>
                                 @else
