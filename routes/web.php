@@ -39,6 +39,7 @@ Route::middleware(['auth'])->prefix('platform-admin')->group(function () {
         ->name('admin.dashboard');
 
     Volt::route('etablissements', 'etablissement.gestion-etablissement')->name('admin.etablissements');;
+    Volt::route('etablissements/{id}}', 'admin.etablissement.detail-etablissement')->name('admin.etablissements-details');;
 });
 
 Route::middleware(['auth'])->group(function () {

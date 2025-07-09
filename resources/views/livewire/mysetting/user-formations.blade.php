@@ -51,9 +51,13 @@ new class extends Component {
         return $rules;
     }
 
-    public function mount(FormationService $formationService)
+    public function boot(FormationService $formationService)
     {
         $this->formationService = $formationService;
+    }
+
+    public function mount()
+    {
         $this->entite_emmeteur_id = Auth::user()->entiteEmmeteur->id ?? null;
     }
 

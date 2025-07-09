@@ -20,7 +20,7 @@
                 <!-- Center Logo -->
                 <div class="flex-shrink-0">
                     @if($center->image && $center->image->file_path)
-                        <img src="{{ asset($center->image->file_path) }}" alt="{{ $center->nomination }}" class="h-48 w-48 object-contain bg-white rounded-xl p-2">
+                        <img src="{{ asset('/storage/'.$center->image->file_path) }}" alt="{{ $center->nomination }}" class="h-48 w-48 object-contain bg-white rounded-xl p-2">
                     @else
                         <div class="h-48 w-48 bg-gray-200 dark:bg-gray-600 rounded-xl flex items-center justify-center">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">

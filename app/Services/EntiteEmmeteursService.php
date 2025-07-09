@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Constant\EntiteEmmeteursConstant;
 use App\Contract\Repositories\EntiteEmmeteursRepositoryInterface;
 use App\Models\EntiteEmmeteurs;
 use Illuminate\Database\Eloquent\Model;
@@ -51,5 +52,15 @@ class EntiteEmmeteursService
     public function search(string $search = '')
     {
         return $this->repository->search($search);
+    }
+
+    public function searchValide(string $search = '')
+    {
+        return $this->repository->searchValide($search);
+    }
+
+    public function getQuantityBySatus($status = EntiteEmmeteursConstant::STATUS_EN_ATTENTE)
+    {
+        return $this->repository->getQuantityByStatus($status);
     }
 }

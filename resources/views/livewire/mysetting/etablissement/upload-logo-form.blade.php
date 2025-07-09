@@ -42,19 +42,14 @@ new class extends Component {
         $this->reset('logo');
         session()->flash('message', __('Logo téléversé avec succès!'));
 
-        // Close the modal
-        $this->dispatch('close-modal', ['name' => 'upload-logo']);
+        //Close Modal
+        \Flux\Flux::modal('upload-logo')->close();
     }
 
 }; ?>
 
 <div>
     <!-- Success Message -->
-    @if (session()->has('message'))
-        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
-            <span class="block sm:inline">{{ session('message') }}</span>
-        </div>
-    @endif
 
     <!-- Current Logo Preview (if exists) -->
 
@@ -63,11 +58,10 @@ new class extends Component {
     <div class="mb-8 text-center relative">
         @if ($entiteEmmeteur->image)
             <div class="mb-4">
-                <h3 class="text-lg font-medium text-gray-300">{{ __('Logo actuel') }}</h3>
                 <div class="mt-2">
                     <img src="{{ asset('storage/' . $entiteEmmeteur->image->file_path) }}"
                          alt="{{ $entiteEmmeteur->nomination }}"
-                         class="h-32 w-auto object-contain border rounded p-1">
+                         class="h-48 w-48 object-contain bg-white rounded-xl p-2">
                 </div>
             </div>
         @else

@@ -35,7 +35,7 @@ class ListEntiteEmmeteurs extends Component
     public function render()
     {
         return view('livewire.list-entite-emmeteurs', [
-            'entiteEmmeteurs' => $this->service->search($this->query)
+            'entiteEmmeteurs' => $this->service->searchValide($this->query)
         ]);
     }
 }

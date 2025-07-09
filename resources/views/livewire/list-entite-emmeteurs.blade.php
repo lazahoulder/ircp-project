@@ -59,7 +59,7 @@
                                         <!-- Logo/Image -->
                                         <div class="flex justify-center mb-4">
                                             @if($entite->image && $entite->image->file_path)
-                                                <img src="{{ asset($entite->image->file_path) }}" alt="{{ $entite->nomination }}" class="h-32 w-32 object-contain rounded-lg">
+                                                <img src="{{ asset('/storage/'.$entite->image->file_path) }}" alt="{{ $entite->nomination }}" class="h-32 w-32 object-contain rounded-lg">
                                             @else
                                                 <div class="h-32 w-32 bg-gray-200 dark:bg-gray-600 rounded-lg flex items-center justify-center">
                                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
