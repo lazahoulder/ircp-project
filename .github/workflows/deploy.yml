@@ -43,14 +43,8 @@ jobs:
         run: |
           mkdir -p tmp
           mkdir -p tmp/package
-
-# Copie tout sauf les exclusions vers tmp/package
           rsync -a . tmp/package --exclude=deploy --exclude=.git --exclude=node_modules --exclude=tests --exclude=.github
-
-  # Crée l'archive à l'extérieur du dossier copié
           tar -czf deploy/app.tar.gz -C tmp/package .
-
-  # Nettoie le temporaire
           rm -rf tmp
 
       - name: Upload to Lightsail via SCP
