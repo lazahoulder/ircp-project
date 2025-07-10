@@ -46,6 +46,7 @@ class CertificateService
      */
     public function validateCertificateTemplate(string $templatePath): array
     {
+        //return ['valid' => true];
         try {
             // Check if the file exists
             if (!file_exists($templatePath)) {

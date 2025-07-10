@@ -107,25 +107,31 @@ class FormationService implements FormationServiceInterface
         $formationData = $data;
 
         if ($certificateFile) {
-            // Store the certificate file temporarily for validation
-            $tempPath = $certificateFile->storeAs('temp', 'temp_certificate_' . time() . '.' . $certificateFile->getClientOriginalExtension());
-            $fullTempPath = storage_path('app/' . $tempPath);
-
             try {
-                // Validate the certificate template
-                $validationResult = $this->certificateService->validateCertificateTemplate($fullTempPath);
+                // Get the temporary file path from the uploaded file
+                $tempPath = $this->getF($certificateFile);
+
+                // Validate the certificate template using the temporary file
+                $validationResult = $this->certificateService->validateCertificateTemplate($tempPath);
+
+                // If validation passes, store the file permanently
+                $certificatePath = $certificateFile->store('certificats', 'public');
+                $formationData['modele_certificat'] = $certificatePath;
 
                 if (!$validationResult['valid']) {
                     // Delete the temporary file
-                    Storage::delete($tempPath);
+                    if (file_exists($tempPath)) {
+                        unlink($tempPath);
+                    }
 
                     // Throw an exception with details about missing placeholders
                     throw new \Exception('Le modèle de certificat ne contient pas tous les placeholders requis: ' .
                         implode(', ', $validationResult['missing']));
                 }
 
+
                 // If valid, store the file permanently
-                $certificatePath = $certificateFile->store('certificats', 'public');
+                $certificatePath = $certificateFile->storeAs('certificats', time() . '.' . $certificateFile->getClientOriginalExtension(), 'public');
                 $formationData['modele_certificat'] = $certificatePath;
 
                 // Delete the temporary file
@@ -161,13 +167,12 @@ class FormationService implements FormationServiceInterface
         $formationData = $data;
 
         if ($certificateFile) {
-            // Store the certificate file temporarily for validation
-            $tempPath = $certificateFile->storeAs('temp', 'temp_certificate_' . time() . '.' . $certificateFile->getClientOriginalExtension());
-            $fullTempPath = storage_path('app/' . $tempPath);
+
+            $tempPath = $this->getF($certificateFile);
 
             try {
                 // Validate the certificate template
-                $validationResult = $this->certificateService->validateCertificateTemplate($fullTempPath);
+                $validationResult = $this->certificateService->validateCertificateTemplate($tempPath);
 
                 if (!$validationResult['valid']) {
                     // Delete the temporary file
@@ -220,5 +225,30 @@ class FormationService implements FormationServiceInterface
         }
 
         return $this->formationRepository->delete($id);
+    }
+
+    /**
+     * @param UploadedFile $certificateFile
+     * @return string
+     * @throws \Exception
+     */
+    protected function getF(UploadedFile $certificateFile): string
+    {
+        $tempPath = $certificateFile->getRealPath();
+
+        // Log the temporary file info
+        \Log::info('Uploaded file info', [
+            'original_name' => $certificateFile->getClientOriginalName(),
+            'temp_path' => $tempPath,
+            'size' => $certificateFile->getSize(),
+            'mime' => $certificateFile->getMimeType(),
+            'exists' => file_exists($tempPath) ? 'yes' : 'no',
+            'readable' => is_readable($tempPath) ? 'yes' : 'no'
+        ]);
+
+        if (!$tempPath || !file_exists($tempPath)) {
+            throw new \Exception("Le fichier temporaire n'existe pas ou n'est pas accessible: " . $tempPath);
+        }
+        return $tempPath;
     }
 }

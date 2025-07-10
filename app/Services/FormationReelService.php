@@ -158,7 +158,6 @@ class FormationReelService implements FormationReelServiceInterface
 
                     // Get records (skip header row)
                     $rows = array_slice($data[0], 1);
-                    $records = [];
 
                     foreach ($rows as $row) {
                         $record = [];
@@ -197,6 +196,24 @@ class FormationReelService implements FormationReelServiceInterface
                     $recordData[strtolower($key)] = $value;
                 }
 
+                // Handle image if present
+                $imagePath = null;
+                if (isset($recordData['photo']) && !empty($recordData['photo'])) {
+                    try {
+                        $imageUrl = $recordData['photo'];
+                        $imageContents = file_get_contents($imageUrl);
+                        if ($imageContents !== false) {
+                            $imageName = 'participant_' . uniqid() . '.jpg';
+                            $path = 'participants/' . $formationReel->id . '/' . $imageName;
+                            Storage::disk('public')->put($path, $imageContents);
+                            $imagePath = $path;
+                        }
+                    } catch (\Exception $e) {
+                        // Log error but continue processing other records
+                        \Log::error('Erreur lors du téléchargement de l\'image: ' . $e->getMessage());
+                    }
+                }
+
                 // Create or update PersonneCertifies
                 $personneCertifies = PersonneCertifies::firstOrCreate(
                     [
@@ -206,6 +223,7 @@ class FormationReelService implements FormationReelServiceInterface
                     [
                         'adresse' => $recordData['adresse'],
                         'date_naissance' => Carbon::parse($recordData['date de naissance'])->format('Y-m-d'),
+                        'photo' => $imagePath,
                     ]
                 );
 
