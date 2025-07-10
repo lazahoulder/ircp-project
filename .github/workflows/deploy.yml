@@ -41,13 +41,11 @@ jobs:
 
       - name: Create build archive
         run: |
-          mkdir -p deploy
-          tar -czf deploy/app.tar.gz . \
-            --exclude=deploy \
-            --exclude=.git \
-            --exclude=node_modules \
-            --exclude=tests \
-            --exclude=.github
+          mkdir -p tmp
+          tar --exclude=deploy --exclude=.git --exclude=node_modules --exclude=tests --exclude=.github \
+          -czf tmp/app.tar.gz .
+          mv tmp/app.tar.gz deploy/
+          rm -r tmp
 
       - name: Upload to Lightsail via SCP
         uses: appleboy/scp-action@v0.1.4
