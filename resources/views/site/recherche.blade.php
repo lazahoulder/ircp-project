@@ -3,5 +3,5 @@
         ['label' => 'Recherche de certificat', 'url' => route('search')]
     ]])
 
-    <livewire:list-certificate />
+    <livewire:list-certificate :certificateId="$id"/>
 </x-layouts.site.app>

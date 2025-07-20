@@ -78,7 +78,7 @@
                             </flux:button>
                             @if ($entite->status == \App\Constant\EntiteEmmeteursConstant::STATUS_EN_ATTENTE)
                                 <flux:button size="xs" tooltip="Valider"
-                                             href="{{ route('admin.etablissements-details', $entite->id) }}"
+                                             wire:click="validateEtablissement({{ $entite->id }})"
                                              variant="outline" icon="check" class="text-blue-600 hover:text-green-800">
                                 </flux:button>
                             @endif

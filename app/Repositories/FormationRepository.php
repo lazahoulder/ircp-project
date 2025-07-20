@@ -178,4 +178,13 @@ class FormationRepository implements FormationRepositoryInterface
 
         return $formation->delete();
     }
+
+    public function upCreate(array $data, array $condition = []): Formation
+    {
+        if (empty($condition)) {
+            return $this->create($data);
+        }
+
+        return Formation::updateOrCreate($condition, $data);
+    }
 }

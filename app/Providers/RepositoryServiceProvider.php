@@ -4,8 +4,10 @@ namespace App\Providers;
 
 use App\Contract\Repositories\CertificateRepositoryInterface;
 use App\Contract\Repositories\EntiteEmmeteursRepositoryInterface;
+use App\Contract\Repositories\PersonneCertifieRepositoryInterface;
 use App\Repositories\CertificateRepository;
 use App\Repositories\EntiteEmmeteursRepository;
+use App\Repositories\PersonneCertifieRepository;
 use Illuminate\Support\ServiceProvider;
 
 class RepositoryServiceProvider extends ServiceProvider
@@ -31,6 +33,11 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(
             EntiteEmmeteursRepositoryInterface::class,
             EntiteEmmeteursRepository::class
+        );
+
+        $this->app->bind(
+            PersonneCertifieRepositoryInterface::class,
+            PersonneCertifieRepository::class
         );
     }
 }

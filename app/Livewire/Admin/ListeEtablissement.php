@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin;
 
+use App\Constant\EntiteEmmeteursConstant;
 use App\Livewire\ListEntiteEmmeteurs;
 use Livewire\Attributes\On;
 use Livewire\WithPagination;
@@ -20,6 +21,13 @@ class ListeEtablissement extends ListEntiteEmmeteurs
     public function mount($hasSearch = true)
     {
         parent::mount($hasSearch);
+    }
+
+    public function validateEtablissement($id)
+    {
+        //dd($id);
+        $centite = $this->service->update(['status' => EntiteEmmeteursConstant::STATUS_VALID], $id);
+        $this->dispatch('$refresh');
     }
 
     public function render()

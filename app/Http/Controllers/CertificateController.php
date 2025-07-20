@@ -2,19 +2,24 @@
 
 namespace App\Http\Controllers;
 
+use App\Contract\Utilities\ImageStorageInterface;
+use App\Exports\ExportCertificat;
 use App\Models\Certificate;
+use App\Models\FormationReel;
 use App\Services\CertificateService;
+use App\Services\FormationReelService;
 use Illuminate\Http\Response;
+use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CertificateController extends Controller
 {
-    protected CertificateService $certificateService;
-
-    public function __construct(CertificateService $certificateService)
+    public function __construct(
+        private CertificateService $certificateService,
+        private ImageStorageInterface $imageStorage,
+    )
     {
-        $this->certificateService = $certificateService;
     }
 
     /**
@@ -52,5 +57,14 @@ class CertificateController extends Controller
             // Return a user-friendly error
             abort(500, 'Une erreur est survenue lors de la génération du certificat. Veuillez réessayer plus tard.');
         }
+    }
+
+    public function downloadExcel($formationReelId = null)
+    {
+        $export = new ExportCertificat($this->certificateService, $this->imageStorage,$formationReelId);
+
+        $fileName = FormationReelService::getEportFileName($formationReelId) . '.xlsx';
+
+        return Excel::download($export, $fileName);
     }
 }

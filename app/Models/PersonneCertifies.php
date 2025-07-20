@@ -21,6 +21,7 @@ class PersonneCertifies extends Model
         'date_naissance',
         'adresse',
         'image_id',
+        'nationality'
     ];
 
     public function image(): BelongsTo

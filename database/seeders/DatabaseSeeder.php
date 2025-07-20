@@ -22,12 +22,12 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // Run the EntiteEmmeteursSeeder to create entities, formations, and formation reels
-        $this->call(EntiteEmmeteursSeeder::class);
+        /*$this->call(EntiteEmmeteursSeeder::class);
 
         // Run the PersonneCertifiesSeeder to create personne certifies
         $this->call(PersonneCertifiesSeeder::class);
 
         // Run the CertificateSeeder to create certificates
-        $this->call(CertificateSeeder::class);
+        $this->call(CertificateSeeder::class);*/
     }
 }

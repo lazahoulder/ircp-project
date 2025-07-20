@@ -15,9 +15,9 @@ class EntiteEmmeteursSeeder extends Seeder
      */
     public function run(): void
     {
-        EntiteEmmeteurs::factory(5)->create()->each(function ($entiteEmmeteurs) {
-            Formation::factory(4)->for($entiteEmmeteurs)->create()->each(function ($formation) {
-                FormationReel::factory(2)->for($formation)->create();
+        EntiteEmmeteurs::factory(3)->create()->each(function ($entiteEmmeteurs) {
+            Formation::factory(2)->for($entiteEmmeteurs)->create()->each(function ($formation) {
+                FormationReel::factory(1)->for($formation)->create();
             });
         });
     }

@@ -21,7 +21,8 @@ class EntiteEmmeteurs extends Model
         'adresse',
         'date_creation',
         'nif',
-        'stat'
+        'stat',
+        'status'
     ];
 
     public function personneCertifies(): HasMany

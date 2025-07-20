@@ -85,4 +85,6 @@ interface FormationRepositoryInterface extends RepositoryInterface
      * @return Model|null
      */
     public function find(int $id): ?Model;
+
+    public function upCreate(array $data, array $condition = []): Formation;
 }

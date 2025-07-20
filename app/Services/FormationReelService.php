@@ -37,7 +37,8 @@ class FormationReelService implements FormationReelServiceInterface
      */
     public function __construct(
         FormationReelRepositoryInterface $formationReelRepository,
-        FormationRepositoryInterface $formationRepository
+        FormationRepositoryInterface $formationRepository,
+        private PersonneCertifieService $personneCertifieService
     ) {
         $this->formationReelRepository = $formationReelRepository;
         $this->formationRepository = $formationRepository;
@@ -197,7 +198,7 @@ class FormationReelService implements FormationReelServiceInterface
                 }
 
                 // Handle image if present
-                $imagePath = null;
+                $imageId = null;
                 if (isset($recordData['photo']) && !empty($recordData['photo'])) {
                     try {
                         $imageUrl = $recordData['photo'];
@@ -206,7 +207,14 @@ class FormationReelService implements FormationReelServiceInterface
                             $imageName = 'participant_' . uniqid() . '.jpg';
                             $path = 'participants/' . $formationReel->id . '/' . $imageName;
                             Storage::disk('public')->put($path, $imageContents);
-                            $imagePath = $path;
+
+                            // Create an Image record
+                            $image = \App\Models\Image::create([
+                                'file_name' => $imageName,
+                                'file_path' => $path,
+                            ]);
+
+                            $imageId = $image->id;
                         }
                     } catch (\Exception $e) {
                         // Log error but continue processing other records
@@ -215,7 +223,7 @@ class FormationReelService implements FormationReelServiceInterface
                 }
 
                 // Create or update PersonneCertifies
-                $personneCertifies = PersonneCertifies::firstOrCreate(
+                $personneCertifies = $this->personneCertifieService->upCreate(
                     [
                         'nom' => $recordData['nom'],
                         'prenom' => $recordData['prenom'],
@@ -223,7 +231,7 @@ class FormationReelService implements FormationReelServiceInterface
                     [
                         'adresse' => $recordData['adresse'],
                         'date_naissance' => Carbon::parse($recordData['date de naissance'])->format('Y-m-d'),
-                        'photo' => $imagePath,
+                        'image_id' => $imageId,
                     ]
                 );
 
@@ -282,5 +290,20 @@ class FormationReelService implements FormationReelServiceInterface
         }
 
         return $this->formationReelRepository->delete($id);
+    }
+
+    public function saveData(array $dataFormationReel): FormationReel
+    {
+        return FormationReel::updateOrCreate($dataFormationReel, $dataFormationReel);
+    }
+
+    public static function getEportFileName($formationReelId)
+    {
+        $formationReel = FormationReel::find($formationReelId);
+        $formation = Formation::find($formationReel->formation_id);
+        $yearMonth = Carbon::parse($formationReel->date_fin)->format('m_Y');
+        $name = preg_replace('/\s+/', '',str_replace('/', '_', $formation->titre));
+
+        return $name . '_' . $yearMonth;
     }
 }

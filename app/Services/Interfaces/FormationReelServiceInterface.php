@@ -2,6 +2,7 @@
 
 namespace App\Services\Interfaces;
 
+use App\Models\Formation;
 use App\Models\FormationReel;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
@@ -81,4 +82,6 @@ interface FormationReelServiceInterface
      * @return bool
      */
     public function deleteFormationReel(int $id): bool;
+
+    public function saveData(array $dataFormationReel): FormationReel;
 }

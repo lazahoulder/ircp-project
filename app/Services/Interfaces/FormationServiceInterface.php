@@ -77,4 +77,11 @@ interface FormationServiceInterface
      * @return bool
      */
     public function deleteFormation(int $id): bool;
+
+    /**
+     * @param array $data
+     * @param UploadedFile|null $certificateFile
+     * @return Formation
+     */
+    public function saveFormation(array $data, ?UploadedFile $certificateFile = null): Formation;
 }

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CertificateController;
 use Illuminate\Support\Facades\Route;
 use Livewire\Volt\Volt;
 
@@ -7,9 +8,11 @@ Route::get('/', function () {
     return view('site.welcome');
 })->name('home');
 
-Route::get('/search', function () {
-    return view('site.recherche');
+Route::get('/search', function ($id = null) {
+    return view('site.recherche', ['id' => $id]);
 })->name('search');
+
+Volt::route('/search/{id}', 'certificate-details')->name('search.details');
 
 Route::get('/centres', function () {
     return view('site.centres');
@@ -25,7 +28,7 @@ Route::get('/contact', function () {
     return view('site.contact');
 })->name('contact');
 
-Route::get('/download-certificate/{id}', [\App\Http\Controllers\CertificateController::class, 'download'])
+Route::get('/download-certificate/{id}', [CertificateController::class, 'download'])
     ->name('certificate.download');
 
 /*Route::view('dashboard', 'dashboard')
@@ -39,7 +42,12 @@ Route::middleware(['auth'])->prefix('platform-admin')->group(function () {
         ->name('admin.dashboard');
 
     Volt::route('etablissements', 'etablissement.gestion-etablissement')->name('admin.etablissements');;
-    Volt::route('etablissements/{id}}', 'admin.etablissement.detail-etablissement')->name('admin.etablissements-details');;
+    Volt::route('etablissements/{id}}', 'admin.etablissement.detail-etablissement')->name('admin.etablissements-details');
+    Route::get(
+        'formations-reel/export-certificate/{formationReelId?}',
+        [CertificateController::class, 'downloadExcel'])
+        ->name('admin.certificates.export');
+
 });
 
 Route::middleware(['auth'])->group(function () {
@@ -60,4 +68,4 @@ Route::middleware(['auth', 'verified'])->prefix('mon-compte')->group(function ()
 });
 
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

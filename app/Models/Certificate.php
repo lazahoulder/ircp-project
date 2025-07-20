@@ -17,6 +17,13 @@ class Certificate extends Model
         'formation_reel_id',
         'personne_certifies_id',
         'date_certification',
+        'formation_data',
+        'qrcode_url',
+        'image_id',
+    ];
+
+    protected $casts = [
+        'formation_data' => 'array',
     ];
 
     public function formationReel(): BelongsTo
@@ -47,5 +54,15 @@ class Certificate extends Model
     public function getEntiteEmmeteurs()
     {
         return $this->formationReel->formation->entiteEmmeteurs;
+    }
+
+    public function image(): BelongsTo
+    {
+        return $this->belongsTo(Image::class, 'image_id');
+    }
+
+    public function getImage(): ?Image
+    {
+        return $this->image ?? $this->personneCertifies->image;
     }
 }

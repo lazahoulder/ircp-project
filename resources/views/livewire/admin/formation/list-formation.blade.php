@@ -13,6 +13,23 @@ use Livewire\Attributes\On;
 new class extends Component {
     use WithPagination, WithFileUploads;
 
+    #[On('openImportModal')]
+    public function openImportModal()
+    {
+        //$this->dispatch('modal.open', ['name' => 'import-modal']);
+        Flux::modal('import-modal')->show();
+    }
+
+    #[On('formations-imported')]
+    public function refreshAfterImport()
+    {
+        // Close the modal
+        Flux::modal('import-modal')->close();
+
+        // Show a notification
+        session()->flash('message', 'Formations importées avec succès');
+    }
+
     public ?Formation $formation = null;
     public bool $isEditing = false;
     public bool $isCreating = false;
@@ -208,10 +225,17 @@ new class extends Component {
         <div class="flex items-left px-5">
             <flux:heading>Les formations du centre</flux:heading>
         </div>
+
+        @if(session()->has('message'))
+            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4"
+                 role="alert">
+                <span class="block sm:inline">{{ session('message') }}</span>
+            </div>
+        @endif
         <!-- Search and Create Button -->
         <div class="flex gap-3 justify-between items-center mb-6">
             <div
-                    class="flex items-center bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden transition-all duration-300 hover:shadow-green-500/10 border border-gray-200 dark:border-gray-700 flex-1 max-w-7xl">
+                class="flex items-center bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden transition-all duration-300 hover:shadow-green-500/10 border border-gray-200 dark:border-gray-700 flex-1 max-w-7xl">
                 <div class="flex-grow flex items-center">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-4 text-gray-400" fill="none"
                          viewBox="0 0 24 24" stroke="currentColor">
@@ -219,25 +243,31 @@ new class extends Component {
                               d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
                     <input
-                            type="text"
-                            wire:model="search"
-                            wire:keydown.enter="searchData"
-                            placeholder="Rechercher des formations..."
-                            class="flex-grow px-3 py-2 text-sm text-gray-800 dark:text-white bg-transparent placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-0"
+                        type="text"
+                        wire:model="search"
+                        wire:keydown.enter="searchData"
+                        placeholder="Rechercher des formations..."
+                        class="flex-grow px-3 py-2 text-sm text-gray-800 dark:text-white bg-transparent placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-0"
                     >
                 </div>
                 <button
-                        type="button"
-                        wire:click="searchData"
-                        class="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-medium text-sm transition-all duration-300"
+                    type="button"
+                    wire:click="searchData"
+                    class="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-medium text-sm transition-all duration-300"
                 >
                     Rechercher
                 </button>
             </div>
-            <flux:button wire:click="createFormation" variant="primary" icon="plus"
-                         class="bg-green-600 hover:bg-green-700 text-white">
-                {{ __('Nouvelle Formation') }}
-            </flux:button>
+            <div class="flex space-x-2">
+                <flux:button wire:click="createFormation" variant="primary" icon="plus"
+                             class="bg-green-600 hover:bg-green-700 text-white">
+                    {{ __('Nouvelle Formation') }}
+                </flux:button>
+                <flux:button wire:click="$dispatch('openImportModal')" variant="primary" icon="arrow-up-tray"
+                             class="bg-blue-600 hover:bg-blue-700 text-white">
+                    {{ __('Importer') }}
+                </flux:button>
+            </div>
         </div>
 
         <!-- Create/Edit Form -->
@@ -247,28 +277,28 @@ new class extends Component {
 
                 <form wire:submit.prevent="{{ $isCreating ? 'storeFormation' : 'updateFormation' }}" class="space-y-4">
                     <flux:input
-                            wire:model="titre"
-                            :label="__('Titre')"
-                            type="text"
-                            required
-                            autofocus
-                            :placeholder="__('Titre de la formation')"
+                        wire:model="titre"
+                        :label="__('Titre')"
+                        type="text"
+                        required
+                        autofocus
+                        :placeholder="__('Titre de la formation')"
                     />
 
                     <flux:input
-                            wire:model="description"
-                            :label="__('Description')"
-                            type="text"
-                            required
-                            :placeholder="__('Description de la formation')"
+                        wire:model="description"
+                        :label="__('Description')"
+                        type="text"
+                        required
+                        :placeholder="__('Description de la formation')"
                     />
 
                     <flux:input
-                            wire:model="expiration_year"
-                            :label="__('Année d\'expiration (optionnel)')"
-                            type="number"
-                            min="0"
-                            :placeholder="__('Nombre d\'années avant expiration')"
+                        wire:model="expiration_year"
+                        :label="__('Année d\'expiration (optionnel)')"
+                        type="number"
+                        min="0"
+                        :placeholder="__('Nombre d\'années avant expiration')"
                     />
 
                     <div class="space-y-2">
@@ -277,12 +307,12 @@ new class extends Component {
                             {{ __('Modèle de certificat') }} <span class="text-red-500">*</span>
                         </label>
                         <input
-                                wire:model="modele_certificat"
-                                type="file"
-                                id="modele_certificat"
-                                class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400"
-                                accept=".doc,.docx"
-                                {{ $isCreating ? 'required' : '' }}
+                            wire:model="modele_certificat"
+                            type="file"
+                            id="modele_certificat"
+                            class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400"
+                            accept=".doc,.docx"
+                            {{ $isCreating ? 'required' : '' }}
                         />
                         <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
                             {{ __('Fichier Word uniquement (.doc, .docx)') }}
@@ -353,8 +383,8 @@ new class extends Component {
                     <h2 class="text-xl font-semibold">Réalisations de la formation: {{ $formation->titre }}</h2>
                     <div class="flex space-x-2">
                         <flux:button
-                                wire:click="$dispatch('openAddRealizationModal', { formationId: {{ $formation->id }} })"
-                                variant="primary" icon="plus" class="bg-green-600 hover:bg-green-700 text-white">
+                            wire:click="$dispatch('openAddRealizationModal', { formationId: {{ $formation->id }} })"
+                            variant="primary" icon="plus" class="bg-green-600 hover:bg-green-700 text-white">
                             {{ __('Nouvelle Réalisation') }}
                         </flux:button>
                         <flux:button wire:click="$set('showFormationReels', false)" variant="outline" icon="arrow-left"
@@ -396,19 +426,17 @@ new class extends Component {
                                     {{ $formationReel->date_fin }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                                    @if($formationReel->participants_file)
-                                        <a href="{{ Storage::url($formationReel->participants_file) }}" target="_blank"
-                                           class="text-blue-600 hover:underline flex items-center">
-                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor"
-                                                 viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path>
-                                            </svg>
-                                            {{ __('Télécharger') }}
-                                        </a>
-                                    @else
-                                        <span class="text-gray-400">{{ __('Non disponible') }}</span>
-                                    @endif
+
+                                    <a href="{{ route('admin.certificates.export', $formationReel->id) }}" target="_blank"
+                                       class="text-blue-600 hover:underline flex items-center">
+                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor"
+                                             viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path>
+                                        </svg>
+                                        {{ __('Télécharger') }}
+                                    </a>
+
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
                                     {{ $formationReel->created_at->format('d/m/Y') }}
@@ -502,7 +530,11 @@ new class extends Component {
     </div>
     <!-- Modal for adding a new realization -->
     <flux:modal name="add-realization-modal" class="max-w-2xl">
-        <livewire:formation.add-formation-realization />
+        <livewire:formation.add-formation-realization/>
+    </flux:modal>
+
+    <!-- Modal for importing formations -->
+    <flux:modal name="import-modal" class="max-w-2xl">
+        <livewire:admin.formation.import-formation :entiteEmmeteurId="$entite_emmeteur_id"/>
     </flux:modal>
 </div>
-

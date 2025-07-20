@@ -3,18 +3,18 @@
 namespace App\Services;
 
 use App\Contract\Repositories\CertificateRepositoryInterface;
+use App\Contract\Utilities\ImageStorageInterface;
 use App\Models\Certificate;
 use App\Models\FormationReel;
 use App\Models\PersonneCertifies;
-use Endroid\QrCode\Builder\Builder;
-use Endroid\QrCode\Writer\PngWriter;
+use BaconQrCode\Renderer\GDLibRenderer;
+use BaconQrCode\Writer;
 use Illuminate\Contracts\Pagination\Paginator;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use League\Csv\Reader;
 use Maatwebsite\Excel\Facades\Excel;
-use PhpOffice\PhpWord\IOFactory;
 use PhpOffice\PhpWord\TemplateProcessor;
 
 class CertificateService
@@ -32,7 +32,10 @@ class CertificateService
         'qrcode'
     ];
 
-    public function __construct(private CertificateRepositoryInterface $certificateRepository)
+    public function __construct(
+        private CertificateRepositoryInterface $certificateRepository,
+        private ImageStorageInterface          $imageStorage
+    )
     {
 
     }
@@ -73,7 +76,7 @@ class CertificateService
             ];
         } catch (\Exception $e) {
             // Log the error
-            \Illuminate\Support\Facades\Log::error('Error validating certificate template: ' . $e->getMessage());
+            Log::error('Error validating certificate template: ' . $e->getMessage());
 
             // Rethrow with a more specific message
             throw new \Exception('Unable to validate certificate template: ' . $e->getMessage());
@@ -103,12 +106,12 @@ class CertificateService
 
         // Get the count of certificates for this establishment and year
         $count = Certificate::query()
-            ->join('formation_reels', 'certificates.formation_reel_id', '=', 'formation_reels.id')
-            ->join('formations', 'formation_reels.formation_id', '=', 'formations.id')
-            ->join('entite_emmeteurs', 'formations.entite_emmeteur_id', '=', 'entite_emmeteurs.id')
-            ->where('entite_emmeteurs.nomination', $establishmentName)
-            ->whereYear('certificates.date_certification', $year)
-            ->count() + 1;
+                ->join('formation_reels', 'certificates.formation_reel_id', '=', 'formation_reels.id')
+                ->join('formations', 'formation_reels.formation_id', '=', 'formations.id')
+                ->join('entite_emmeteurs', 'formations.entite_emmeteur_id', '=', 'entite_emmeteurs.id')
+                ->where('entite_emmeteurs.nomination', $establishmentName)
+                ->whereYear('certificates.date_certification', $year)
+                ->count() + 1;
 
         // Format: PREFIX-YEAR-SEQUENCE (e.g., ABC-2023-00001)
         return sprintf('%s-%d-%05d', $prefix, $year, $count);
@@ -123,7 +126,7 @@ class CertificateService
     private function generateQrCodeUrl(int $certificateId): string
     {
         // Generate the download URL for the certificate
-        $downloadUrl = route('certificate.download', ['id' => $certificateId]);
+        $searchUrl = route('search.details', ['id' => $certificateId]);
 
         // Create a temporary directory for QR codes if it doesn't exist
         $tempDir = storage_path('app/temp/qrcodes');
@@ -135,24 +138,21 @@ class CertificateService
         $qrCodePath = $tempDir . '/qrcode_' . $certificateId . '_' . time() . '.png';
 
         try {
-            // Create QR code using endroid/qr-code library (v6.x)
-            $builder = new Builder();
-            $result = $builder->build(
-                data: $downloadUrl,
-                size: 150,
-                margin: 10
-            );
+            // Create QR code
+            $renderer = new GDLibRenderer(400);
+            $writer = new Writer($renderer);
+            $writer->writeFile($searchUrl, $qrCodePath);
 
             // Save the QR code to a file
-            file_put_contents($qrCodePath, $result->getString());
+            //file_put_contents($qrCodePath, $result->getString());
 
             // Log success
-            \Illuminate\Support\Facades\Log::info('QR code generated successfully at: ' . $qrCodePath);
+            Log::info('QR code generated successfully at: ' . $qrCodePath);
 
             return $qrCodePath;
         } catch (\Exception $e) {
             // Log the error
-            \Illuminate\Support\Facades\Log::error('Error generating QR code: ' . $e->getMessage());
+            Log::error('Error generating QR code: ' . $e->getMessage());
 
             // Return an empty string or throw an exception
             throw new \Exception('Unable to generate QR code: ' . $e->getMessage());
@@ -178,19 +178,17 @@ class CertificateService
             // Create a template processor
             $templateProcessor = new TemplateProcessor($templatePath);
 
-            // Replace placeholders in the template
-            foreach ($replacements as $key => $value) {
-                $templateProcessor->setValue($key, $value ?? '');
-            }
 
             // Handle QR code separately
-            if (isset($replacements['qrcode_url']) && !empty($replacements['qrcode_url'])) {
+            if (!empty($replacements['qrcode_url'])) {
                 try {
                     // Get the QR code image path
                     $qrCodePath = $replacements['qrcode_url'];
 
+                    //dump($qrCodePath);
+
                     // Log the path for debugging
-                    \Illuminate\Support\Facades\Log::info('Using QR code from: ' . $qrCodePath);
+                    Log::info('Using QR code from: ' . $qrCodePath);
 
                     // Check if the QR code image exists
                     if (!file_exists($qrCodePath)) {
@@ -201,54 +199,60 @@ class CertificateService
                     // Replace the ${qrcode} placeholder with the actual QR code image
                     $templateProcessor->setImageValue('qrcode', [
                         'path' => $qrCodePath,
-                        'width' => 150,
-                        'height' => 150
+                        'width' => 125,
+                        'height' => 125
                     ]);
 
-                    // Clean up the QR code file when the script finishes
-                    register_shutdown_function(function() use ($qrCodePath) {
-                        if (file_exists($qrCodePath)) {
-                            unlink($qrCodePath);
-                        }
-                    });
+                    unset($replacements['qrcode_url']);
 
                     // Log success
-                    \Illuminate\Support\Facades\Log::info('QR code added to certificate');
+                    Log::info('QR code added to certificate');
                 } catch (\Exception $e) {
                     // Log the error but continue processing
-                    \Illuminate\Support\Facades\Log::error('Error adding QR code to certificate: ' . $e->getMessage());
+                    Log::error('Error adding QR code to certificate: ' . $e->getMessage());
                 }
             }
 
-            // Handle photo separately
-            if (isset($replacements['photo']) && !empty($replacements['photo'])) {
+            // Handle QR code separately
+            if (!empty($replacements['photo'])) {
                 try {
-                    // Get the photo path
-                    $photoPath = $replacements['photo'];
+                    // Get the QR code image path
+                    $imagePath = $replacements['photo'];
+
+                    //dump($qrCodePath);
 
                     // Log the path for debugging
-                    \Illuminate\Support\Facades\Log::info('Using photo from: ' . $photoPath);
+                    Log::info('Using image from: ' . $imagePath);
 
-                    // Check if the photo exists
-                    if (!file_exists($photoPath)) {
-                        throw new \Exception("Photo not found at: {$photoPath}");
+                    // Check if the QR code image exists
+                    if (!file_exists($imagePath)) {
+                        throw new \Exception("Image not found at: {$imagePath}");
                     }
 
-                    // Add the photo to the document
-                    // Replace the ${photo} placeholder with the actual photo
+                    // Add the QR code image to the document
+                    // Replace the ${qrcode} placeholder with the actual QR code image
                     $templateProcessor->setImageValue('photo', [
-                        'path' => $photoPath,
+                        'path' => $imagePath,
                         'width' => 100,
                         'height' => 100
                     ]);
 
+
+                    unset($replacements['photo']);
+
                     // Log success
-                    \Illuminate\Support\Facades\Log::info('Photo added to certificate');
+                    Log::info('QR code added to certificate');
                 } catch (\Exception $e) {
                     // Log the error but continue processing
-                    \Illuminate\Support\Facades\Log::error('Error adding photo to certificate: ' . $e->getMessage());
+                    Log::error('Error adding QR code to certificate: ' . $e->getMessage());
                 }
             }
+
+            // Replace placeholders in the template
+            foreach ($replacements as $key => $value) {
+                $templateProcessor->setValue($key, $value ?? '');
+            }
+
 
             // Ensure certificates directory exists
             $certificatesDir = storage_path('app/certificates');
@@ -270,7 +274,7 @@ class CertificateService
             return $outputPath;
         } catch (\Exception $e) {
             // Log the error
-            \Illuminate\Support\Facades\Log::error('Error generating certificate: ' . $e->getMessage());
+            Log::error('Error generating certificate: ' . $e->getMessage());
 
             // Rethrow a more specific exception
             throw new \Exception('Unable to generate certificate: ' . $e->getMessage());
@@ -283,6 +287,7 @@ class CertificateService
      * @param array $data
      * @param string|null $templatePath
      * @return Certificate
+     * @throws \Exception
      */
     public function createCertificate(array $data, ?string $templatePath = null): Certificate
     {
@@ -305,39 +310,43 @@ class CertificateService
         $year = $certificationDate->year;
 
         // Generate certificate number
-        $data['numero_certificat'] = $this->generateCertificateNumber($establishmentName, $year);
+        $data['numero_certificat'] = $data['numero_certificat'] ?? $this->generateCertificateNumber($establishmentName, $year);
 
         // Create the certificate
         $certificate = $this->certificateRepository->create($data);
 
-        // Generate PDF certificate if template is provided
-        if ($templatePath) {
-            $personneCertifies = PersonneCertifies::findOrFail($data['personne_certifies_id']);
+        $qrCode = $this->generateQrCodeUrl($certificate->id);
 
-            $replacements = [
-                'numero_certificat' => $certificate->numero_certificat,
-                'nom' => $personneCertifies->nom,
-                'prenom' => $personneCertifies->prenom,
-                'date_certification' => $certificationDate->format('d/m/Y'),
-                'formation_titre' => $formationReel->formation ? $formationReel->formation->titre : 'N/A',
-                'etablissement' => $establishmentName,
-                // Add more replacements as needed
-            ];
+        $certificate->qrcode_url = $qrCode;
 
-            // Add photo if available
-            if ($personneCertifies->image && $personneCertifies->image->file_path &&
-                file_exists(public_path($personneCertifies->image->file_path))) {
-                $replacements['photo'] = public_path($personneCertifies->image->file_path);
-            }
+        $certificate->save();
 
-            $outputFileName = Str::slug($personneCertifies->nom . '-' . $personneCertifies->prenom . '-' . $certificate->numero_certificat);
 
-            $pdfPath = $this->generateCertificateFromTemplate($templatePath, $replacements, $outputFileName);
+        return $certificate;
+    }
 
-            // You might want to store the PDF path in the certificate record
-            // $certificate->pdf_path = $pdfPath;
-            // $certificate->save();
-        }
+    /**
+     * @throws \Exception
+     */
+    public function createCertificateFromFormation(FormationReel $formationReel, PersonneCertifies $personneCertifies, array $data): Certificate
+    {
+        $dataCertificate = [
+            'formation_reel_id' => $formationReel->id,
+            'personne_certifies_id' => $personneCertifies->id,
+            'date_certification' => $data['date_certification'] ?? null,
+            'numero_certificat' => $data['numero_certificat'],
+            'formation_data' => $data['formation_data'] ?? [],
+            'image_id' => $data['image_id'] ?? null,
+        ];
+
+        $certificate = $this->certificateRepository->create($dataCertificate);
+
+        $qrCode = $this->generateQrCodeUrl($certificate->id);
+
+        $certificate->qrcode_url = $qrCode;
+
+        $certificate->save();
+
 
         return $certificate;
     }
@@ -354,40 +363,24 @@ class CertificateService
         $extension = pathinfo($filePath, PATHINFO_EXTENSION);
         $results = ['success' => 0, 'failed' => 0, 'certificates' => []];
 
-        if ($extension === 'csv') {
-            // Process CSV file
-            $csv = Reader::createFromPath($filePath, 'r');
-            $csv->setHeaderOffset(0);
 
-            $records = $csv->getRecords();
+        // Process Excel file
+        $data = Excel::toArray([], $filePath)[0];
 
-            foreach ($records as $record) {
-                try {
-                    $certificate = $this->processImportRecord($record, $templatePath);
-                    $results['success']++;
-                    $results['certificates'][] = $certificate;
-                } catch (\Exception $e) {
-                    $results['failed']++;
-                }
-            }
-        } else {
-            // Process Excel file
-            $data = Excel::toArray([], $filePath)[0];
+        // Get headers from first row
+        $headers = array_shift($data);
 
-            // Get headers from first row
-            $headers = array_shift($data);
-
-            foreach ($data as $row) {
-                try {
-                    $record = array_combine($headers, $row);
-                    $certificate = $this->processImportRecord($record, $templatePath);
-                    $results['success']++;
-                    $results['certificates'][] = $certificate;
-                } catch (\Exception $e) {
-                    $results['failed']++;
-                }
+        foreach ($data as $row) {
+            try {
+                $record = array_combine($headers, $row);
+                $certificate = $this->processImportRecord($record, $templatePath);
+                $results['success']++;
+                $results['certificates'][] = $certificate;
+            } catch (\Exception $e) {
+                $results['failed']++;
             }
         }
+
 
         return $results;
     }
@@ -438,14 +431,14 @@ class CertificateService
             // This can be removed once all certificates have been regenerated
             if (file_exists($existingFilePath)) {
                 unlink($existingFilePath);
-                \Illuminate\Support\Facades\Log::info('Deleted existing certificate to force regeneration with QR code');
+                Log::info('Deleted existing certificate to force regeneration with QR code');
             }
 
             // Get the template path from the formation
             $templatePath = null;
             if ($certificate->formationReel && $certificate->formationReel->formation &&
                 !empty($certificate->formationReel->formation->modele_certificat)) {
-                $formationTemplatePath = storage_path('app/templates/' . $certificate->formationReel->formation->modele_certificat);
+                $formationTemplatePath = Storage::path($certificate->formationReel->formation->modele_certificat);
 
                 if (file_exists($formationTemplatePath)) {
                     $templatePath = $formationTemplatePath;
@@ -460,7 +453,7 @@ class CertificateService
                 // This is temporary and can be removed once the QR code issue is resolved
                 if (file_exists($defaultTemplatePath)) {
                     unlink($defaultTemplatePath);
-                    \Illuminate\Support\Facades\Log::info('Deleted existing default template to force regeneration');
+                    Log::info('Deleted existing default template to force regeneration');
                 }
 
                 // Create the default template
@@ -491,22 +484,21 @@ class CertificateService
                 'formation_titre' => $certificate->formationReel && $certificate->formationReel->formation ?
                     $certificate->formationReel->formation->titre : 'N/A',
                 'etablissement' => $establishmentName,
-                'qrcode_url' => $this->generateQrCodeUrl($certificate->id),
+                'qrcode_url' => $certificate->qrcode_url ?? $this->generateQrCodeUrl($certificate->id),
                 // Add more replacements as needed
             ];
 
             // Add photo if available
-            if ($certificate->personneCertifies && $certificate->personneCertifies->image &&
-                $certificate->personneCertifies->image->file_path &&
-                file_exists(public_path($certificate->personneCertifies->image->file_path))) {
-                $replacements['photo'] = public_path($certificate->personneCertifies->image->file_path);
+            $image = $certificate->getImage();
+            if (file_exists($this->imageStorage->getImagePath($image->file_path))) {
+                $replacements['photo'] = $this->imageStorage->getImagePath($image->file_path);
             }
 
             // Generate the certificate
             return $this->generateCertificateFromTemplate($templatePath, $replacements, $outputFileName);
         } catch (\Exception $e) {
             // Log the error
-            \Illuminate\Support\Facades\Log::error('Error downloading certificate: ' . $e->getMessage());
+            Log::error('Error downloading certificate: ' . $e->getMessage());
 
             // Rethrow with a more user-friendly message
             throw new \Exception('Unable to download certificate: ' . $e->getMessage());
@@ -545,7 +537,7 @@ class CertificateService
                 imagepng($image, $placeholderPath);
                 imagedestroy($image);
 
-                \Illuminate\Support\Facades\Log::info('Created placeholder image at: ' . $placeholderPath);
+                Log::info('Created placeholder image at: ' . $placeholderPath);
             }
 
             // Create a basic Word document as the default template
@@ -608,7 +600,7 @@ class CertificateService
             $objWriter->save($outputPath);
 
             // Log success
-            \Illuminate\Support\Facades\Log::info('Default certificate template created at: ' . $outputPath);
+            Log::info('Default certificate template created at: ' . $outputPath);
 
             // Verify the file was created
             if (!file_exists($outputPath)) {
@@ -616,10 +608,15 @@ class CertificateService
             }
         } catch (\Exception $e) {
             // Log the error
-            \Illuminate\Support\Facades\Log::error('Error creating default template: ' . $e->getMessage());
+            Log::error('Error creating default template: ' . $e->getMessage());
 
             // Rethrow a more specific exception
             throw new \Exception('Unable to create default certificate template: ' . $e->getMessage());
         }
+    }
+
+    public function getCertificate(?int $formationReelId)
+    {
+        return Certificate::where('formation_reel_id', $formationReelId)->get();
     }
 }

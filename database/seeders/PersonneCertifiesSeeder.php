@@ -13,6 +13,6 @@ class PersonneCertifiesSeeder extends Seeder
      */
     public function run(): void
     {
-        PersonneCertifies::factory(50)->create();
+        PersonneCertifies::factory(10)->create();
     }
 }

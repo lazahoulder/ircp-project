@@ -18,7 +18,7 @@ return new class extends Migration
             $table->unsignedBigInteger('personne_certifies_id');
             $table->foreign('personne_certifies_id')->references('id')->on('personne_certifies');
             $table->string('numero_certificat')->nullable(false);
-            $table->date('date_certificat')->nullable(false);
+            $table->date('date_certification')->nullable(true);
             $table->timestamps();
         });
     }

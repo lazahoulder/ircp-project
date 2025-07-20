@@ -15,9 +15,17 @@ class ListCertificate extends Component
 
     public $query = '';
 
+    public $certificateId;
+
     public function boot(CertificateService $service)
     {
         $this->service = $service;
+    }
+
+    public function mount(int $certificateId = null)
+    {
+        $this->certificateId = $certificateId;
+        $this->dispatch('showCertificatInModal', id: $this->certificateId)->to(CertificateDetails::class);;
     }
 
     public function search()

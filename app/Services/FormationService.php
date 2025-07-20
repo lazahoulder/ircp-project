@@ -6,6 +6,7 @@ use App\Models\Formation;
 use App\Contract\Repositories\FormationRepositoryInterface;
 use App\Services\CertificateService;
 use App\Services\Interfaces\FormationServiceInterface;
+use Exception;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -31,8 +32,9 @@ class FormationService implements FormationServiceInterface
      */
     public function __construct(
         FormationRepositoryInterface $formationRepository,
-        CertificateService $certificateService
-    ) {
+        CertificateService           $certificateService
+    )
+    {
         $this->formationRepository = $formationRepository;
         $this->certificateService = $certificateService;
     }
@@ -100,7 +102,7 @@ class FormationService implements FormationServiceInterface
      * @param array $data
      * @param UploadedFile|null $certificateFile
      * @return Formation
-     * @throws \Exception If the certificate template is invalid
+     * @throws Exception If the certificate template is invalid
      */
     public function createFormation(array $data, ?UploadedFile $certificateFile = null): Formation
     {
@@ -125,7 +127,7 @@ class FormationService implements FormationServiceInterface
                     }
 
                     // Throw an exception with details about missing placeholders
-                    throw new \Exception('Le modèle de certificat ne contient pas tous les placeholders requis: ' .
+                    throw new Exception('Le modèle de certificat ne contient pas tous les placeholders requis: ' .
                         implode(', ', $validationResult['missing']));
                 }
 
@@ -136,7 +138,7 @@ class FormationService implements FormationServiceInterface
 
                 // Delete the temporary file
                 Storage::delete($tempPath);
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 // Delete the temporary file in case of any error
                 Storage::delete($tempPath);
 
@@ -155,7 +157,7 @@ class FormationService implements FormationServiceInterface
      * @param array $data
      * @param UploadedFile|null $certificateFile
      * @return bool
-     * @throws \Exception If the certificate template is invalid
+     * @throws Exception If the certificate template is invalid
      */
     public function updateFormation(int $id, array $data, ?UploadedFile $certificateFile = null): bool
     {
@@ -167,41 +169,9 @@ class FormationService implements FormationServiceInterface
         $formationData = $data;
 
         if ($certificateFile) {
-
-            $tempPath = $this->getF($certificateFile);
-
-            try {
-                // Validate the certificate template
-                $validationResult = $this->certificateService->validateCertificateTemplate($tempPath);
-
-                if (!$validationResult['valid']) {
-                    // Delete the temporary file
-                    Storage::delete($tempPath);
-
-                    // Throw an exception with details about missing placeholders
-                    throw new \Exception('Le modèle de certificat ne contient pas tous les placeholders requis: ' .
-                        implode(', ', $validationResult['missing']));
-                }
-
-                // Delete the old file if it exists
-                if ($formation->modele_certificat) {
-                    Storage::disk('public')->delete($formation->modele_certificat);
-                }
-
-                // If valid, store the file permanently
-                $certificatePath = $certificateFile->store('certificats', 'public');
-                $formationData['modele_certificat'] = $certificatePath;
-
-                // Delete the temporary file
-                Storage::delete($tempPath);
-            } catch (\Exception $e) {
-                // Delete the temporary file in case of any error
-                Storage::delete($tempPath);
-
-                // Rethrow the exception
-                throw $e;
-            }
+            $formationData['modele_certificat'] = $this->treatCertificatUpdate($certificateFile, $formation);
         }
+
 
         return $this->formationRepository->update($id, $formationData);
     }
@@ -228,9 +198,22 @@ class FormationService implements FormationServiceInterface
     }
 
     /**
+     * @throws Exception
+     */
+    public function saveFormation(array $data, ?UploadedFile $certificateFile = null): Formation
+    {
+        $formation = $this->formationRepository->upCreate($data, $data);
+        if ($certificateFile) {
+            $formationData['modele_certificat'] = $this->treatCertificatUpdate($certificateFile, $formation);
+        }
+
+        return $formation;
+    }
+
+    /**
      * @param UploadedFile $certificateFile
      * @return string
-     * @throws \Exception
+     * @throws Exception
      */
     protected function getF(UploadedFile $certificateFile): string
     {
@@ -247,8 +230,53 @@ class FormationService implements FormationServiceInterface
         ]);
 
         if (!$tempPath || !file_exists($tempPath)) {
-            throw new \Exception("Le fichier temporaire n'existe pas ou n'est pas accessible: " . $tempPath);
+            throw new Exception("Le fichier temporaire n'existe pas ou n'est pas accessible: " . $tempPath);
         }
         return $tempPath;
+    }
+
+    /**
+     * @param UploadedFile $certificateFile
+     * @param Formation $formation
+     * @return string|null
+     * @throws Exception
+     */
+    public function treatCertificatUpdate(UploadedFile $certificateFile, Formation $formation): ?string
+    {
+        $tempPath = $this->getF($certificateFile);
+
+        try {
+            // Validate the certificate template
+            $validationResult = $this->certificateService->validateCertificateTemplate($tempPath);
+
+            if (!$validationResult['valid']) {
+                // Delete the temporary file
+                Storage::delete($tempPath);
+
+                // Throw an exception with details about missing placeholders
+                throw new Exception('Le modèle de certificat ne contient pas tous les placeholders requis: ' .
+                    implode(', ', $validationResult['missing']));
+            }
+
+            // Delete the old file if it exists
+            if ($formation->modele_certificat) {
+                Storage::disk('public')->delete($formation->modele_certificat);
+            }
+
+            // If valid, store the file permanently
+            $certificatePath = $certificateFile->store('certificats', 'public');
+
+            // Delete the temporary file
+            Storage::delete($tempPath);
+
+        } catch (Exception $e) {
+            // Delete the temporary file in case of any error
+            Storage::delete($tempPath);
+
+            // Rethrow the exception
+            throw $e;
+        }
+
+        return $certificatePath;
     }
 }
