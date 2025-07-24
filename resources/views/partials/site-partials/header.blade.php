@@ -24,7 +24,7 @@
 
         <!-- Button Group -->
         <div class="flex items-center gap-x-1 lg:gap-x-2 ms-auto py-1 lg:ps-6 lg:order-3 lg:col-span-3">
-            @if (Route::has('login'))
+            {{--@if (Route::has('login'))
                 <nav class="flex items-center justify-end gap-4">
                     @auth
                         <flux:dropdown position="top" align="end">
@@ -86,7 +86,7 @@
 
                     @endauth
                 </nav>
-            @endif
+            @endif--}}
 
             <div class="lg:hidden">
                 <button type="button"

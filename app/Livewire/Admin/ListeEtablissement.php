@@ -5,16 +5,21 @@ namespace App\Livewire\Admin;
 use App\Constant\EntiteEmmeteursConstant;
 use App\Livewire\ListEntiteEmmeteurs;
 use Livewire\Attributes\On;
+use Livewire\Attributes\Url;
 use Livewire\WithPagination;
 
 class ListeEtablissement extends ListEntiteEmmeteurs
 {
     use WithPagination;
 
+    #[Url]
+    public string $status = '';
+
     #[On('launch-search')]
-    public function listesnDoSearch($query = '')
+    public function listesnDoSearch($query = '', $status = '')
     {
         $this->query = $query;
+        $this->status = $status;
         $this->search();
     }
 
@@ -33,7 +38,7 @@ class ListeEtablissement extends ListEntiteEmmeteurs
     public function render()
     {
         return view('livewire.admin.liste-etablissement' , [
-            'entiteEmmeteurs' => $this->service->search($this->query)
+            'entiteEmmeteurs' => $this->service->searchByStatus($this->query, $this->status)
         ]);
     }
 }

@@ -1,5 +1,6 @@
 <?php
 
+use App\Services\FormationReelService;
 use Livewire\Volt\Component;
 use App\Models\Formation;
 use App\Models\EntiteEmmeteurs;
@@ -46,6 +47,7 @@ new class extends Component {
 
     // Services
     protected FormationService $formationService;
+    protected FormationReelService $formationReelService;
 
     // Search
     public string $search = '';
@@ -66,12 +68,13 @@ new class extends Component {
         return $rules;
     }
 
-    public function boot(FormationService $formationService)
+    public function boot(FormationService $formationService, FormationReelService $formationReelService)
     {
         $this->formationService = $formationService;
+        $this->formationReelService = $formationReelService;
     }
 
-    public function mount(EntiteEmmeteurs $centre)
+    public function mount(?EntiteEmmeteurs $centre)
     {
         $this->entite_emmeteur_id = $centre?->id;
     }
@@ -199,23 +202,17 @@ new class extends Component {
         }
     }
 
+    public function regenerateQrCode($formationReelId)
+    {
+        $this->formationReelService->regenerateQrCodeParticipants($formationReelId);
+    }
+
     public function render(): mixed
     {
-        $query = Formation::query();
-
-        if ($this->search) {
-            $query->where('titre', 'like', '%' . $this->search . '%')
-                ->orWhere('description', 'like', '%' . $this->search . '%');
-        }
-
-
-        $query->where('entite_emmeteur_id', $this->entite_emmeteur_id);
-
-        $formations = $query->latest()->paginate(10);
+        $formations = $this->formationService->searchFormations($this->search, $this->entite_emmeteur_id);
 
         return view('livewire.admin.formation.list-formation', [
             'formations' => $formations,
-            'entiteEmmeteurs' => EntiteEmmeteurs::all(),
         ]);
     }
 }; ?>
@@ -410,10 +407,6 @@ new class extends Component {
                                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                 Participants
                             </th>
-                            <th scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                Créé le
-                            </th>
                         </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
@@ -427,7 +420,7 @@ new class extends Component {
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
 
-                                    <a href="{{ route('admin.certificates.export', $formationReel->id) }}" target="_blank"
+                                    {{--<a href="{{ route('admin.certificates.export', $formationReel->id) }}" target="_blank"
                                        class="text-blue-600 hover:underline flex items-center">
                                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor"
                                              viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -435,11 +428,18 @@ new class extends Component {
                                                   d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path>
                                         </svg>
                                         {{ __('Télécharger') }}
-                                    </a>
+                                    </a>--}}
+                                    <flux:button size="sm" wire:click="$dispatch('open-search', { id: {{ $formationReel->id }} })"
+                                                 variant="primary" icon="eye"
+                                                 class="bg-blue-600 hover:bg-blue-700 text-white">
+                                        {{ __('Voir') }}
+                                    </flux:button>
+                                    <flux:button size="sm" wire:click="regenerateQrCode({{ $formationReel->id }})"
+                                                 variant="primary" icon="qr-code"
+                                                 class="bg-blue-600 hover:bg-blue-700 text-white">
+                                        {{ __('Regenerer QR-CODE') }}
+                                    </flux:button>
 
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                                    {{ $formationReel->created_at->format('d/m/Y') }}
                                 </td>
                             </tr>
                         @empty
@@ -528,13 +528,18 @@ new class extends Component {
             </div>
         @endif
     </div>
+
+    <!-- Modal for importing formations -->
+    <flux:modal name="import-modal" class="max-w-2xl">
+        <livewire:admin.formation.import-formation :entiteEmmeteurId="$entite_emmeteur_id"/>
+    </flux:modal>
+
     <!-- Modal for adding a new realization -->
     <flux:modal name="add-realization-modal" class="max-w-2xl">
         <livewire:formation.add-formation-realization/>
     </flux:modal>
 
-    <!-- Modal for importing formations -->
-    <flux:modal name="import-modal" class="max-w-2xl">
-        <livewire:admin.formation.import-formation :entiteEmmeteurId="$entite_emmeteur_id"/>
+    <flux:modal name="show-participants" class="max-w-4xl md:max-w-5xl lg:max-w-6xl xl:max-w-7xl mx-auto">
+        <livewire:admin.formation.participants/>
     </flux:modal>
 </div>

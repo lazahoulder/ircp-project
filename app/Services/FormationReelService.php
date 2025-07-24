@@ -38,7 +38,8 @@ class FormationReelService implements FormationReelServiceInterface
     public function __construct(
         FormationReelRepositoryInterface $formationReelRepository,
         FormationRepositoryInterface $formationRepository,
-        private PersonneCertifieService $personneCertifieService
+        private PersonneCertifieService $personneCertifieService,
+        private CertificateService $certificateService,
     ) {
         $this->formationReelRepository = $formationReelRepository;
         $this->formationRepository = $formationRepository;
@@ -305,5 +306,15 @@ class FormationReelService implements FormationReelServiceInterface
         $name = preg_replace('/\s+/', '',str_replace('/', '_', $formation->titre));
 
         return $name . '_' . $yearMonth;
+    }
+
+    public function regenerateQrCodeParticipants($formationReelId)
+    {
+        $participants = $this->certificateService->getCertificate((int)$formationReelId);
+
+        foreach ($participants as $participant)
+        {
+            $this->certificateService->regenerateQrCode($participant);
+        }
     }
 }

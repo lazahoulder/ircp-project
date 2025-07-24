@@ -34,6 +34,16 @@ class EntiteEmmeteursRepository implements EntiteEmmeteursRepositoryInterface
         return $this->searchQuery($search)->paginate(15);
     }
 
+    public function searchByStatus(string $search = '', $status = ''): Paginator
+    {
+        $query = $this->searchQuery($search);
+        if (!empty($status)) {
+            $query->where('status', $status);
+        }
+
+        return $query->paginate(15);
+    }
+
     public function find(int $id): ?EntiteEmmeteurs
     {
         return EntiteEmmeteurs::find($id);

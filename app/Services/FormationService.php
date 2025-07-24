@@ -82,7 +82,7 @@ class FormationService implements FormationServiceInterface
      */
     public function searchFormations(string $search, ?int $entiteEmmeteurId = null, int $perPage = 10): LengthAwarePaginator
     {
-        return $this->formationRepository->searchWithFilters($search, $entiteEmmeteurId, $perPage);
+        return $this->formationRepository->searchByEntiteEmmeteur($search, $entiteEmmeteurId, $perPage);
     }
 
     /**

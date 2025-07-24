@@ -5,11 +5,30 @@ namespace App\Repositories;
 use App\Contract\Repositories\CertificateRepositoryInterface;
 use App\Models\Certificate;
 use Illuminate\Contracts\Pagination\Paginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class CertificateRepository implements CertificateRepositoryInterface
 {
 
+    private function searchQuery(string $search = ''): Builder
+    {
+        $query = Certificate::query()
+            ->join('formation_reels', 'certificates.formation_reel_id', '=', 'formation_reels.id')
+            ->join('formations', 'formation_reels.formation_id', '=', 'formations.id')
+            ->join('personne_certifies', 'certificates.personne_certifies_id', '=', 'personne_certifies.id')
+            ->where(function (Builder $query) use ($search) {
+                $query
+                    ->where('certificates.numero_certificat', 'like', '%' . $search . '%')
+                    ->orWhere('personne_certifies.nom', 'like', '%' . $search . '%')
+                    ->orWhere('personne_certifies.prenom', 'like', '%' . $search . '%')
+                    ->orWhere('formations.titre', 'like', '%' . $search . '%');
+            })
+        ;
+
+        return $query;
+    }
     public function all(): Paginator
     {
         return Certificate::query()->paginate(15, pageName: 'certificates');
@@ -17,15 +36,7 @@ class CertificateRepository implements CertificateRepositoryInterface
 
     public function search(string $search = ''): Paginator
     {
-        $query = Certificate::query()
-            ->join('formation_reels', 'certificates.formation_reel_id', '=', 'formation_reels.id')
-            ->join('formations', 'formation_reels.formation_id', '=', 'formations.id')
-            ->join('personne_certifies', 'certificates.personne_certifies_id', '=', 'personne_certifies.id')
-            ->where('certificates.numero_certificat', 'like', '%' . $search . '%')
-            ->orWhere('personne_certifies.nom', 'like', '%' . $search . '%')
-            ->orWhere('personne_certifies.prenom', 'like', '%' . $search . '%')
-            ->orWhere('formations.titre', 'like', '%' . $search . '%')
-        ;
+        $query = $this->searchQuery($search);
 
         return $query->paginate(15, pageName: 'certificates');
     }
@@ -57,5 +68,16 @@ class CertificateRepository implements CertificateRepositoryInterface
     {
         $certificate->update($data);
         return $certificate;
+    }
+
+    public function searchByFormationReelId(string $search = '', ?int $formationReelId = null): LengthAwarePaginator
+    {
+        $query = $this->searchQuery($search);
+
+        if ($formationReelId) {
+            $query->where('formation_reel_id', $formationReelId);
+        };
+
+        return $query->paginate(15, pageName: 'certificates');
     }
 }

@@ -59,6 +59,11 @@ class EntiteEmmeteursService
         return $this->repository->searchValide($search);
     }
 
+    public function searchByStatus(string $search = '', string $status = 'null')
+    {
+        return $this->repository->searchByStatus($search, $status);
+    }
+
     public function getQuantityBySatus($status = EntiteEmmeteursConstant::STATUS_EN_ATTENTE)
     {
         return $this->repository->getQuantityByStatus($status);

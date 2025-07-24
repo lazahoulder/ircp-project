@@ -10,6 +10,7 @@ use App\Models\PersonneCertifies;
 use BaconQrCode\Renderer\GDLibRenderer;
 use BaconQrCode\Writer;
 use Illuminate\Contracts\Pagination\Paginator;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -126,7 +127,7 @@ class CertificateService
     private function generateQrCodeUrl(int $certificateId): string
     {
         // Generate the download URL for the certificate
-        $searchUrl = route('search.details', ['id' => $certificateId]);
+        $searchUrl = url(route('search.details', ['id' => $certificateId]));
 
         // Create a temporary directory for QR codes if it doesn't exist
         $tempDir = storage_path('app/temp/qrcodes');
@@ -618,5 +619,19 @@ class CertificateService
     public function getCertificate(?int $formationReelId)
     {
         return Certificate::where('formation_reel_id', $formationReelId)->get();
+    }
+
+    public function searchCertificateByEntity(string $search, int $formationReelId): LengthAwarePaginator
+    {
+        return $this->certificateRepository->searchByFormationReelId($search, $formationReelId);
+    }
+
+    public function regenerateQrCode(Certificate $participant): void
+    {
+        if ($participant->qrcode_url) {
+            unlink($participant->qrcode_url);
+        }
+        $participant->qrcode_url = $this->generateQrCodeUrl($participant->id);
+        $participant->save();
     }
 }

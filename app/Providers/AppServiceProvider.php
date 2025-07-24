@@ -21,8 +21,8 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         // Force HTTPS for all URLs when not in local environment
-        if (request()->getHost() != 'localhost') {
+        /*if (request()->getHost() != 'localhost') {
             URL::forceScheme('https');
-        }
+        }*/
     }
 }

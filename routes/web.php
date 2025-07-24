@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\CertificateController;
+use App\Http\Middleware\CheckAdmin;
 use Illuminate\Support\Facades\Route;
 use Livewire\Volt\Volt;
 
@@ -35,7 +36,7 @@ Route::get('/download-certificate/{id}', [CertificateController::class, 'downloa
     ->middleware(['auth', 'verified'])
     ->name('dashboard');*/
 
-Route::middleware(['auth'])->prefix('platform-admin')->group(function () {
+Route::middleware(['auth', 'admin'])->prefix('platform-admin')->group(function () {
     Route::redirect('', 'dashboard');
 
     Route::view('dashboard', 'dashboard')

@@ -90,7 +90,7 @@ class FormationRepository implements FormationRepositoryInterface
      * @param int $perPage
      * @return LengthAwarePaginator
      */
-    public function searchWithFilters(string $search, ?int $entiteEmmeteurId = null, int $perPage = 10): LengthAwarePaginator
+    public function searchByEntiteEmmeteur(string $search, ?int $entiteEmmeteurId = null, int $perPage = 10): LengthAwarePaginator
     {
         $query = $this->model->query();
 
