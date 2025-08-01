@@ -13,10 +13,15 @@
 
             <flux:navlist variant="outline">
                 <flux:navlist.group :heading="__('Platform')" class="grid">
-                    <flux:navlist.item icon="layout-grid" :href="route('admin.dashboard')" :current="request()->routeIs('admin.dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:navlist.item>
-                </flux:navlist.group>
-                <flux:navlist.group class="grid">
-                    <flux:navlist.item icon="home" :href="route('admin.etablissements')" :current="request()->routeIs('admin.etablissements')" wire:navigate>{{ __('Les centres') }}</flux:navlist.item>
+                    <flux:navlist.item icon="layout-grid" :href="route('admin.dashboard')" :current="request()->routeIs('admin.dashboard')" wire:navigate>
+                        {{ __('Dashboard') }}
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="home" :href="route('admin.etablissements')" :current="request()->routeIs('admin.etablissements')" wire:navigate wire:current>
+                        {{ __('Les centres') }}
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="home" :href="route('admin.certificates')" :current="request()->routeIs('admin.certificates')" wire:navigate wire:current>
+                        {{ __('Certificats') }}
+                    </flux:navlist.item>
                 </flux:navlist.group>
             </flux:navlist>
 

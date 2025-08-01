@@ -7,6 +7,17 @@
 
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <div class="flex-shrink-0 p-4">
+            <a href="{{ route('search') }}"
+               class="flex items-center text-blue-200 hover:text-white transition-colors" wire:navigate>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24"
+                     stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                </svg>
+                Retour à la recherche
+            </a>
+        </div>
         @if($certificate)
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
                 <!-- Certificate Header -->
@@ -39,11 +50,12 @@
                             <div class="mb-6 flex items-center">
                                 <!-- Photo du titulaire -->
                                 <div class="mr-4">
-                                    @if($certificate->personneCertifies && $certificate->personneCertifies->image && $certificate->personneCertifies->image->file_path)
+                                    @if($certificate->getImage())
+                                        @php($pathIage = $certificate->image ? $certificate->image->file_path : $certificate->personneCertifies->image->file_path)
                                         <img
-                                            src="{{ asset('storage/' . $certificate->personneCertifies->image->file_path) }}"
+                                            src="{{ asset('storage/' . $pathIage) }}"
                                             alt="{{ $certificate->personneCertifies->nom }}"
-                                            class="h-50 w-50 object-cover rounded-full border-2 border-blue-500">
+                                            class="h-20 w-20 object-cover rounded-full border-2 border-blue-500">
                                     @else
                                         <div
                                             class="h-20 w-20 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center">
@@ -79,6 +91,21 @@
                                 <p class="text-lg text-gray-900 dark:text-white">{{ $certificate->formationReel->formation->description }}</p>
 
                             </div>
+                            <div class="mb-6">
+                                <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Centre
+                                    éméteur</h3>
+                                <p class="text-lg font-semibold text-gray-900 dark:text-white">{{ $certificate->getEntiteEmmeteurs()->nomination }}</p>
+                            </div>
+                            <div>
+                                <div>
+                                    <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Période de
+                                        formation</h3>
+                                    <p class="text-lg font-semibold text-gray-900 dark:text-white">
+                                        Du {{ \Carbon\Carbon::parse($certificate->formationReel->date_debut)->format('d/m/Y') }}
+                                        au {{ \Carbon\Carbon::parse($certificate->formationReel->date_fin)->format('d/m/Y') }}
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -88,14 +115,6 @@
                             complémentaires</h3>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <h4 class="text-xs font-medium text-gray-500 dark:text-gray-400">Période de
-                                    formation</h4>
-                                <p class="text-sm text-gray-700 dark:text-gray-300">
-                                    Du {{ \Carbon\Carbon::parse($certificate->formationReel->date_debut)->format('d/m/Y') }}
-                                    au {{ \Carbon\Carbon::parse($certificate->formationReel->date_fin)->format('d/m/Y') }}
-                                </p>
-                            </div>
                             @if(!empty($certificate->formation_data))
                                 @foreach($certificate->formation_data as $key => $value)
                                     <div>

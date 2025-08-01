@@ -3,7 +3,9 @@
 namespace App\Livewire\Admin\Formation;
 
 use App\Services\Admin\ImportFormationService;
+use Flux\Flux;
 use Illuminate\Support\Facades\Log;
+use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\Attributes\Rule;
@@ -32,11 +34,29 @@ class ImportFormation extends Component
 
         try {
             $path = $this->file->getRealPath();
-            $service->processUploadFile($path, $this->entiteEmmeteurId);
+            $errors = $service->processUploadFile($path, $this->entiteEmmeteurId);
 
             $this->uploadStatus = 'success';
             $this->reset('file');
-            $this->dispatch('formations-imported');
+
+            Flux::modal('import-modal')->close();
+
+            if (count($errors) > 0) {
+                $errorHtml = '<ul class="list-disc pl-5">';
+                foreach ($errors as $error) {
+                    $errorHtml .= '<li>' . htmlspecialchars($error['name']) . ' : ' . htmlspecialchars(implode(', ', $error['errors'])) . '</li>';
+                }
+                $errorHtml .= '</ul>';
+                LivewireAlert::title('Erreur sur les feuille suivant, il y des colonne manquants')
+                    ->html($errorHtml)
+                    ->warning()
+                    ->withConfirmButton('fermer')
+                    ->timer(null)
+                    ->show();
+            } else {
+                $this->dispatch('formations-imported');
+            }
+
         } catch (\Exception $e) {
             $this->uploadStatus = 'error';
             $this->addError('file', $e->getMessage());

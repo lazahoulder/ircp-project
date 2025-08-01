@@ -3,7 +3,7 @@
 namespace App\Livewire;
 
 use App\Services\CertificateService;
-use App\Services\PersonneCertifiesService;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -13,19 +13,12 @@ class ListCertificate extends Component
 
     protected CertificateService $service;
 
+    #[Url]
     public $query = '';
-
-    public $certificateId;
 
     public function boot(CertificateService $service)
     {
         $this->service = $service;
-    }
-
-    public function mount(int $certificateId = null)
-    {
-        $this->certificateId = $certificateId;
-        $this->dispatch('showCertificatInModal', id: $this->certificateId)->to(CertificateDetails::class);;
     }
 
     public function search()
@@ -33,10 +26,14 @@ class ListCertificate extends Component
         $this->resetPage();
     }
 
-
+    public function updatingQuery()
+    {
+        // Reset to initial value
+        $this->resetPage();
+    }
 
     public function render()
     {
-        return view('livewire.list-certificate', ['certificates' => $this->service->searchCertificate($this->query)]);
+        return view('livewire.list-certificate', ['certificates' => $this->service->searchValideCertificate($this->query)]);
     }
 }

@@ -67,4 +67,17 @@ class CertificateController extends Controller
 
         return Excel::download($export, $fileName);
     }
+
+    public function downloadQrCode(int $id)
+    {
+        $certificate = Certificate::find($id);
+        $qrCodePath = $certificate->qrcode_url;
+
+
+        if (!file_exists($qrCodePath)) {
+            abort(404, 'Le QR code n\'a pas pu être généré.');
+        }
+
+        return response()->download($qrCodePath);
+    }
 }

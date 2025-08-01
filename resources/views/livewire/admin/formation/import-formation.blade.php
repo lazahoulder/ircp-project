@@ -1,11 +1,11 @@
 <div>
     <div class="p-6">
-        <h2 class="text-lg font-medium text-gray-900 mb-4">Importer des formations</h2>
+        <h2 class="text-lg font-medium text-white mb-4">Importer des formations</h2>
 
         <form wire:submit="uploadFile">
             <div class="mb-4">
-                <label for="file" class="block text-sm font-medium text-gray-700 mb-2">
-                    Fichier Excel (.xlsx, .xls)
+                <label for="file" class="block font-medium text-gray-300 mb-2">
+                    Fichier Excel (.xlsx, .xls) en suivant <flux:link class="text-emerald-600 font-bold" href="{{ route('formation.model.download') }}">ce modèle</flux:link>
                 </label>
                 <input
                     type="file"
@@ -43,17 +43,6 @@
                     Une erreur s'est produite lors de l'importation des formations. Veuillez vérifier le format et réessayer.
                 </div>
             @endif
-
-            <div class="mt-4">
-                <p class="text-sm text-gray-600">
-                    <strong>Note:</strong> Le fichier Excel doit contenir les colonnes suivantes:
-                </p>
-                <ul class="list-disc list-inside text-sm text-gray-600 ml-4 mt-2">
-                    <li>TITRE</li>
-                    <li>DESCRIPTION</li>
-                    <li>EXPIRATION_YEAR (optionnel)</li>
-                </ul>
-            </div>
         </form>
     </div>
 </div>

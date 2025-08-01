@@ -13,6 +13,7 @@ use Illuminate\Contracts\Pagination\Paginator;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
@@ -94,6 +95,20 @@ class CertificateService
     }
 
     /**
+     * @param string $search
+     * @return Paginator<Certificate>
+     */
+    public function searchValideCertificate(string $search = ''): Paginator
+    {
+        return $this->certificateRepository->searchValide($search);
+    }
+
+    public function searchForAdminCertificate(string $search = '',?int $entiteId = null, ?int $formationId = null, ?string $status = null): Paginator
+    {
+        return $this->certificateRepository->searchForAdmin($search, $entiteId, $formationId, $status);
+    }
+
+    /**
      * Generate a certificate number based on establishment name and year
      *
      * @param string $establishmentName
@@ -127,7 +142,7 @@ class CertificateService
     private function generateQrCodeUrl(int $certificateId): string
     {
         // Generate the download URL for the certificate
-        $searchUrl = url(route('search.details', ['id' => $certificateId]));
+        $searchUrl = Route::generate('search.details', ['id' => $certificateId]);
 
         // Create a temporary directory for QR codes if it doesn't exist
         $tempDir = storage_path('app/temp/qrcodes');
@@ -340,7 +355,13 @@ class CertificateService
             'image_id' => $data['image_id'] ?? null,
         ];
 
-        $certificate = $this->certificateRepository->create($dataCertificate);
+        $condition = [
+            'formation_reel_id' => $formationReel->id,
+            'personne_certifies_id' => $personneCertifies->id,
+            'date_certification' => $data['date_certification'] ?? null,
+            'numero_certificat' => $data['numero_certificat'],
+        ];
+        $certificate = $this->certificateRepository->upCreate($dataCertificate, $condition);
 
         $qrCode = $this->generateQrCodeUrl($certificate->id);
 
@@ -628,7 +649,7 @@ class CertificateService
 
     public function regenerateQrCode(Certificate $participant): void
     {
-        if ($participant->qrcode_url) {
+        if ($participant->qrcode_url && file_exists($participant->qrcode_url)) {
             unlink($participant->qrcode_url);
         }
         $participant->qrcode_url = $this->generateQrCodeUrl($participant->id);

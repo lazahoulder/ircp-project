@@ -15,6 +15,9 @@ export default defineConfig({
         }),
         tailwindcss(),
     ],
+    build: {
+        base: process.env.APP_URL || 'https://ircp.org',
+    },
     server: {
         cors: true,
         // Enable HTTPS for development server

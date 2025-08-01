@@ -119,23 +119,23 @@
                 class="flex flex-col gap-y-4 gap-x-0 mt-5 lg:flex-row lg:justify-center lg:items-center lg:gap-y-0 lg:gap-x-7 lg:mt-0">
 
                 <flux:navlist class="lg:flex-row lg:items-center">
-                    <flux:navlist.item href="{{ route('home') }}" class="text-white hover:text-indigo-400 hover:bg-gray-100/10 dark:hover:bg-neutral-700/30 rounded-md px-2 py-1 {{ request()->routeIs('home') ? 'bg-blue-600 text-white' : '' }}">
+                    <flux:navlist.item href="{{ route('home') }}" class="text-white hover:text-indigo-400 hover:bg-gray-100/10 dark:hover:bg-neutral-700/30 rounded-md px-2 py-1" :current="request()->routeIs('home')" wire:navigate>
                         Accueil
                     </flux:navlist.item>
 
-                    <flux:navlist.item href="{{ route('centres') }}" class="text-white hover:text-indigo-400 hover:bg-gray-100/10 dark:hover:bg-neutral-700/30 rounded-md px-2 py-1 {{ request()->routeIs('centres') || request()->routeIs('centre.details') ? 'bg-blue-600 text-white' : '' }}">
+                    <flux:navlist.item href="{{ route('centres') }}" class="text-white hover:text-indigo-400 hover:bg-gray-100/10 dark:hover:bg-neutral-700/30 rounded-md px-2 py-1" :current="request()->routeIs('centres')" wire:navigate wire:current>
                         Centre acrédité
                     </flux:navlist.item>
 
-                    <flux:navlist.item href="{{ route('search') }}" class="text-white hover:text-indigo-400 hover:bg-gray-100/10 dark:hover:bg-neutral-700/30 rounded-md px-2 py-1 {{ request()->routeIs('search') ? 'bg-blue-600 text-white' : '' }}">
+                    <flux:navlist.item href="{{ route('search') }}" class="text-white hover:text-indigo-400 hover:bg-gray-100/10 dark:hover:bg-neutral-700/30 rounded-md px-2 py-1" :current="request()->routeIs('search')" wire:navigate wire:current>
                         Les certificats
                     </flux:navlist.item>
 
-                    <flux:navlist.item href="{{ route('about') }}" class="text-white hover:text-indigo-400 hover:bg-gray-100/10 dark:hover:bg-neutral-700/30 rounded-md px-2 py-1 {{ request()->routeIs('about') ? 'bg-blue-600 text-white' : '' }}">
+                    <flux:navlist.item href="{{ route('about') }}" class="text-white hover:text-indigo-400 hover:bg-gray-100/10 dark:hover:bg-neutral-700/30 rounded-md px-2 py-1" :current="request()->routeIs('about')" wire:navigate wire:current>
                         À propos
                     </flux:navlist.item>
 
-                    <flux:navlist.item href="{{ route('contact') }}" class="text-white hover:text-indigo-400 hover:bg-gray-100/10 dark:hover:bg-neutral-700/30 rounded-md px-2 py-1 {{ request()->routeIs('contact') ? 'bg-blue-600 text-white' : '' }}">
+                    <flux:navlist.item href="{{ route('contact') }}" class="text-white hover:text-indigo-400 hover:bg-gray-100/10 dark:hover:bg-neutral-700/30 rounded-md px-2 py-1" :current="request()->routeIs('contact')" wire:navigate wire:current>
                         Contact
                     </flux:navlist.item>
                 </flux:navlist>

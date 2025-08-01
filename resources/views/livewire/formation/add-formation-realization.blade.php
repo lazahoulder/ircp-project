@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Formation;
+use App\Models\FormationReel;
 use App\Services\Interfaces\FormationServiceInterface;
 use App\Services\Interfaces\FormationReelServiceInterface;
 use Livewire\Volt\Component;
@@ -11,9 +12,9 @@ use Flux\Flux;
 new class extends Component {
     use WithFileUploads;
 
+    public ?int $formationReelId = null;
     public ?Formation $formation = null;
     public ?int $formationId = null;
-    public $excelFile = null;
     public $date_debut = null;
     public $date_fin = null;
 
@@ -22,9 +23,10 @@ new class extends Component {
     protected FormationReelServiceInterface $formationReelService;
 
     public function boot(
-        FormationServiceInterface $formationService,
+        FormationServiceInterface     $formationService,
         FormationReelServiceInterface $formationReelService
-    ) {
+    )
+    {
         $this->formationService = $formationService;
         $this->formationReelService = $formationReelService;
     }
@@ -33,16 +35,22 @@ new class extends Component {
     {
         return [
             'formationId' => ['required', 'exists:formations,id'],
-            'excelFile' => ['required', 'file', 'mimes:xlsx,xls,csv'],
             'date_debut' => ['required', 'date'],
             'date_fin' => ['required', 'date', 'after_or_equal:date_debut'],
         ];
     }
 
     #[On('openAddRealizationModal')]
-    public function openModal($formationId)
+    public function openModal($formationId, $formationReelId = null): void
     {
-        $this->reset(['excelFile', 'date_debut', 'date_fin']);
+        if ($formationReelId) {
+            $formationReel = $this->formationReelService->findFormationReelById($formationReelId);
+            $this->date_debut = $formationReel->date_debut;
+            $this->date_fin = $formationReel->date_fin;
+            $this->formationReelId = $formationReelId;
+        } else {
+            $this->reset(['date_debut', 'date_fin', 'formationReelId']);
+        }
         $this->formationId = $formationId;
         $this->formation = $this->formationService->findFormationById($formationId);
         Flux::modal('add-realization-modal')->show();
@@ -53,16 +61,25 @@ new class extends Component {
         $this->validate();
 
         try {
-            // Create a new FormationReel and process the participants file
-            $this->formationReelService->createFormationReel(
-                $this->formationId,
-                $this->date_debut,
-                $this->date_fin,
-                $this->excelFile
-            );
+            if ($this->formationReelId) {
+                $this->formationReelService->updateFormationReel(
+                    $this->formationReelId,
+                    [
+                        'date_debut' => $this->date_debut,
+                        'date_fin' => $this->date_fin
+                    ]
+                );
+            } else {
+                // Create a new FormationReel and process the participants file
+                $this->formationReelService->createFormationReel(
+                    $this->formationId,
+                    $this->date_debut,
+                    $this->date_fin
+                );
+            }
 
             // Reset the form
-            $this->reset(['excelFile', 'date_debut', 'date_fin']);
+            $this->reset(['date_debut', 'date_fin']);
 
             // Close the modal
             Flux::modal('add-realization-modal')->close();
@@ -102,11 +119,12 @@ new class extends Component {
         @endif
 
         <!-- Date Fields -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="gap-4">
             <flux:input
                 wire:model="date_debut"
                 :label="__('Date de début')"
                 type="date"
+                class="p-2"
                 required
             />
 
@@ -114,29 +132,9 @@ new class extends Component {
                 wire:model="date_fin"
                 :label="__('Date de fin')"
                 type="date"
+                class="p-2"
                 required
             />
-        </div>
-
-        <!-- Excel File Upload -->
-        <div class="space-y-2">
-            <label for="excelFile" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                {{ __('Liste des participants (Excel)') }} <span class="text-red-500">*</span>
-            </label>
-            <input
-                wire:model="excelFile"
-                type="file"
-                id="excelFile"
-                class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400"
-                accept=".xlsx,.xls,.csv"
-                required
-            />
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                {{ __('Fichier Excel uniquement (.xlsx, .xls, .csv)') }}
-            </p>
-            @error('excelFile')
-                <p class="mt-1 text-sm text-red-600 dark:text-red-500">{{ $message }}</p>
-            @enderror
         </div>
 
         <!-- Buttons -->

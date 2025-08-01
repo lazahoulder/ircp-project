@@ -4,9 +4,9 @@
 
             <!-- Logo & Description -->
             <div>
-                <h2 class="text-xl font-bold text-white">IRCP Madagascar</h2>
+                <h2 class="text-xl font-bold text-white">IRCP</h2>
                 <p class="mt-4 text-sm text-gray-400">
-                    Institut de Reconnaissance des Compétences Professionnelles. Un acteur clé de la certification à Madagascar.
+                    International Registry for Certified Professional
                 </p>
             </div>
 
@@ -57,7 +57,7 @@
         <!-- Ligne © centrée -->
         <div class="mt-10 border-t border-gray-700 pt-6">
             <p class="text-sm text-gray-500 text-center">
-                © {{ now()->format('Y') }} IRCP Madagascar. Tous droits réservés.
+                © {{ now()->format('Y') }} IRCP. Tous droits réservés.
             </p>
         </div>
     </div>

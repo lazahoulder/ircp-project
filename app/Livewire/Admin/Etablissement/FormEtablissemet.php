@@ -72,7 +72,7 @@ class FormEtablissemet extends Component
         $this->entiteEmmeteur->save();
 
         if ($this->isEditing) {
-            $this->dispatch('profile-updated');
+            $this->dispatch('etabissement-updated');
             Flux::modal($this->modalName)->close();
         } else {
             $this->redirectRoute('admin.etablissements-details', $this->entiteEmmeteur->id);

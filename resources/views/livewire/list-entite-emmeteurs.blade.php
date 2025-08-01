@@ -53,7 +53,7 @@
                 @if(count($entiteEmmeteurs) > 0)
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         @foreach ($entiteEmmeteurs as $entite)
-                            <a href="{{ route('centre.details', $entite->id) }}" class="block">
+                            <a href="{{ route('centre.details', $entite->id) }}" class="block" wire:navigate>
                                 <div class="bg-white dark:bg-gray-700 rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 cursor-pointer">
                                     <div class="p-4">
                                         <!-- Logo/Image -->

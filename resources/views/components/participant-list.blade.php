@@ -1,11 +1,15 @@
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+<div class="max-w-9xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
         <!-- Table Header -->
         <div
             class="px-6 py-5 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 flex justify-between items-center">
             <h2 class="text-xl font-semibold text-gray-800 dark:text-white">Résultats de la recherche</h2>
             <div class="text-sm text-gray-500 dark:text-gray-400">
-                Cliquez sur un certificat pour voir les détails
+                @if($status == \App\Constant\CertificateConstant::STATUS_EN_ATTENTE && count($participants) > 0)
+                    <flux:button size="sm" icon="check" variant="primary" color="green" wire:click="validateEnAttente">
+                        Valider les certificats
+                    </flux:button>
+                @endif
             </div>
         </div>
 
@@ -26,12 +30,34 @@
                         class="hidden sm:table-cell px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                         Prénom
                     </th>
-                    @foreach($additionalHeaders as $header)
+                    @if ($isStandAlone)
+                        <th scope="col"
+                            class="hidden sm:table-cell px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            Etablissement
+                        </th>
+                        <th scope="col"
+                            class="hidden sm:table-cell px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            Formation
+                        </th>
                         <th scope="col"
                             class="hidden lg:table-cell px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                            {{ $header }}
+                            Information additionnelle
                         </th>
-                    @endforeach
+                    @else
+                        @foreach($additionalHeaders as $header)
+                            @if(!strpos($header, 'de formation'))
+                                <th scope="col"
+                                    class="hidden lg:table-cell px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                    {{ $header }}
+                                </th>
+                            @endif
+                        @endforeach
+                    @endif
+                    <th scope="col"
+                        class="hidden lg:table-cell px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Status
+                    </th>
+
                     <th scope="col"
                         class="px-6 py-4 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                         Actions
@@ -72,18 +98,52 @@
                         <td class="hidden sm:table-cell px-6 py-4">
                             <div class="text-sm text-gray-900 dark:text-white">{{ $participant->prenom }}</div>
                         </td>
-                        @foreach($participant->formation_data as $formation)
-                            <td class="hidden sm:table-cell px-6 py-4">
-                                <div class="text-sm text-gray-900 dark:text-white">{{ $formation }}</div>
+                        @if ($isStandAlone)
+                            <td class="hidden lg:table-cell px-6 py-4">
+                                <div
+                                    class="text-sm text-gray-900 dark:text-white">{{ $participant->getEntiteEmmeteurs()->nomination }}</div>
                             </td>
-                        @endforeach
-                        <td class="px-6 py-4 text-right">
-                            <flux:button size="sm" tooltip="Détail"
-                                         href="{{ route('search.details', $participant->id) }}"
+                            <td class="hidden md:table-cell px-6 py-4">
+                                <div
+                                    class="text-sm text-gray-900 dark:text-white">{{ $participant->formationReel->formation->titre }}</div>
+                                <div
+                                    class="text-xs text-gray-900 dark:text-white">{{ $participant->formationReel->formation->description }}</div>
+                            </td>
+                            <td class="hidden sm:table-cell px-6 py-4">
+                                @foreach($participant->formation_data as $header => $formation)
+                                    @if(!strpos($header, 'de formation'))
+                                        <div class="text-sm text-gray-900 dark:text-white">
+                                            <span class="font-semibold underline">{{ strtoupper($header) }}</span> : {{ $formation }}
+                                        </div>
+                                    @endif
+                                @endforeach
+                            </td>
+                        @else
+                            @foreach($participant->formation_data as $header => $formation)
+                                @if(!strpos($header, 'de formation'))
+                                    <td class="hidden sm:table-cell px-6 py-4">
+                                        <div class="text-sm text-gray-900 dark:text-white">{{ $formation }}</div>
+                                    </td>
+                                @endif
+                            @endforeach
+                        @endif
+                        <td class="px-6 py-4">
+                            <div class="text-sm {{ $participant->getStatusTextColor() }}">{{ strtoupper($participant->status) }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex gap-2">
+                            <flux:button size="sm"
+                                         tooltip="Détails et modification d'un certificat"
+                                         href="{{ Route::generate('admin.certificates-view', ['id' => $participant->id]) }}" wire:navigate
                                          variant="outline" icon="eye"
                                          class="px-3 py-1 bg-blue-600 text-white rounded-md shadow-sm hover:bg-blue-700 transition-colors duration-150 text-xs flex items-center">
-                                Détails
                             </flux:button>
+                            @if ($isStandAlone && \App\Constant\CertificateConstant::STATUS_EN_ATTENTE == $participant->status)
+                                <flux:button size="sm" tooltip="Valider"
+                                             wire:click="validateCertificate({{ $participant->id }})"
+                                             variant="primary" color="blue" icon="check"
+                                             class="px-3 py-1 bg-blue-600 text-white rounded-md shadow-sm hover:bg-blue-700 transition-colors duration-150 text-xs flex items-center">
+                                </flux:button>
+                            @endif
                         </td>
                     </tr>
 

@@ -2,7 +2,7 @@
     <div class="text-center mb-10">
         <h2 class="text-2xl font-bold text-white">🏢 Nos Centres Accrédités</h2>
         <p class="mt-2 text-white text-lg">
-            Découvrez nos centres accrédités par l'IRCP Madagascar
+            Découvrez nos centres accrédités par l'IRCP
         </p>
     </div>
 
@@ -14,7 +14,7 @@
                     <!-- Logo/Image -->
                     <div class="flex justify-center mb-4">
                         @if($client->image && $client->image->file_path)
-                            <img src="{{ asset($client->image->file_path) }}" alt="{{ $client->nomination }}" class="h-24 w-24 object-contain rounded-lg">
+                            <img src="{{ asset('storage/' . $client->image->file_path) }}" alt="{{ $client->nomination }}" class="h-24 w-24 object-contain rounded-lg">
                         @else
                             <div class="h-24 w-24 bg-gray-200 dark:bg-gray-600 rounded-lg flex items-center justify-center">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">

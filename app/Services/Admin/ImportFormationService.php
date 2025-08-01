@@ -45,9 +45,10 @@ readonly class ImportFormationService
     /**
      * @throws Exception
      */
-    public function processUploadFile(string $fullPath, int $entiteEmmeteurId)
+    public function processUploadFile(string $fullPath, int $entiteEmmeteurId): array
     {
-        $datas = $this->processExcel($fullPath);
+        $excelResult = $this->processExcel($fullPath);
+        $datas = $excelResult['data'];
 
         foreach ($datas as $record) {
             foreach ($record as $value) {
@@ -77,6 +78,8 @@ readonly class ImportFormationService
                 }
             }
         }
+
+        return $excelResult['headerErrors'];
     }
 
     public function processExcel(string $filePath, string $storagePath = 'public/images'): array
@@ -85,7 +88,7 @@ readonly class ImportFormationService
             if (!Storage::exists($storagePath)) {
                 Storage::makeDirectory($storagePath);
             }
-            return $this->excelReader->read($filePath);
+            return $this->excelReader->read($filePath, $this->requiredColumns);
         } catch (Exception $e) {
             Log::error("Erreur lors du traitement du fichier Excel : " . $e->getMessage());
             throw $e;

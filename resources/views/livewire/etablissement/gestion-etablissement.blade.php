@@ -11,7 +11,7 @@ new #[Layout('components.layouts.app')] class extends Component {
 
 <div>
     <x-settings.admin heading="Gestion des établissements" subheading="Liste des établissements"/>
-    <div class="max-w-7xl mx-auto relative px-10">
+    <div class="max-w-9xl mx-auto relative px-10">
         <div class="flex items-center gap-4">
             <!-- Barre de recherche -->
             <div class="flex-1">

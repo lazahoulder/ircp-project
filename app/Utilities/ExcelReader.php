@@ -8,6 +8,7 @@ use App\Contract\Utilities\ImageStorageInterface;
 use App\Models\Image;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Psr\Log\LoggerInterface;
 
 class ExcelReader implements ExcelReaderInterface
@@ -21,16 +22,23 @@ class ExcelReader implements ExcelReaderInterface
     {
     }
 
-    public function read(string $filePath): array
+    public function read(string $filePath, array $headerValidate = []): array
     {
         $spreadsheet = IOFactory::load($filePath);
         $result = [];
         $duplicateWarnings = [];
+        $headerErrors = [];
 
         foreach ($spreadsheet->getAllSheets() as $sheetIndex => $worksheet) {
             $sheetName = $worksheet->getTitle();
             $data = [];
             $images = [];
+            $errors = $this->validateWorkSheet($worksheet, $headerValidate);
+
+            if (!empty($errors['errors'])) {
+                $headerErrors[] = $errors;
+                continue;
+            }
 
             // Récupérer les images
             $this->logger->debug("Feuille: $sheetName, Nombre d'images: " . count($worksheet->getDrawingCollection()));
@@ -110,7 +118,10 @@ class ExcelReader implements ExcelReaderInterface
             $this->logger->warning("Problèmes de duplication détectés : " . implode(', ', $duplicateWarnings));
         }
 
-        return $result;
+        return [
+            'data' => $result,
+            'headerErrors' => $headerErrors,
+        ];
     }
 
     public function getHeader(string $filePath)
@@ -119,5 +130,22 @@ class ExcelReader implements ExcelReaderInterface
         $worksheet = $spreadsheet->getActiveSheet();
         $rows = $worksheet->toArray();
         return array_shift($rows);
+    }
+
+    protected function validateWorkSheet(Worksheet $worksheet, array $headerValidate = []) : array
+    {
+        $rows = $worksheet->toArray();
+        $headers = array_shift($rows);
+
+        if (empty($headerValidate)) {
+            return [];
+        }
+
+        $errors = array_diff($headerValidate, array_map('strtoupper', $headers));
+
+        return [
+            'name' => $worksheet->getTitle(),
+            'errors' => $errors,
+        ];
     }
 }

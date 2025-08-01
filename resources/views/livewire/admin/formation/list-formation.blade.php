@@ -10,6 +10,7 @@ use Livewire\WithPagination;
 use Livewire\WithFileUploads;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\On;
+use Carbon\Carbon;
 
 new class extends Component {
     use WithPagination, WithFileUploads;
@@ -52,6 +53,11 @@ new class extends Component {
     // Search
     public string $search = '';
 
+    public function updatingSearch()
+    {
+        $this->searchData();
+    }
+
     public function rules()
     {
         $rules = [
@@ -68,6 +74,12 @@ new class extends Component {
         return $rules;
     }
 
+    #[On('formation-created')]
+    public function refreshData()
+    {
+        $this->dispatch('$refresh');
+    }
+
     public function boot(FormationService $formationService, FormationReelService $formationReelService)
     {
         $this->formationService = $formationService;
@@ -77,50 +89,6 @@ new class extends Component {
     public function mount(?EntiteEmmeteurs $centre)
     {
         $this->entite_emmeteur_id = $centre?->id;
-    }
-
-    public function resetForm()
-    {
-        $this->titre = '';
-        $this->description = '';
-        $this->expiration_year = null;
-        $this->modele_certificat = null;
-        $this->errorMessage = '';
-        $this->resetValidation();
-    }
-
-    public function createFormation()
-    {
-        $this->resetForm();
-        $this->isCreating = true;
-        $this->isEditing = false;
-        $this->showFormationReels = false;
-        $this->selectedFormationId = null;
-    }
-
-    public function storeFormation()
-    {
-        $this->validate();
-        $this->errorMessage = '';
-
-        try {
-            // Create the formation using the service
-            $data = [
-                'titre' => $this->titre,
-                'description' => $this->description,
-                'entite_emmeteur_id' => $this->entite_emmeteur_id,
-                'expiration_year' => $this->expiration_year,
-            ];
-
-            $this->formationService->createFormation($data, $this->modele_certificat);
-
-            $this->isCreating = false;
-            $this->resetForm();
-            $this->dispatch('formation-created');
-        } catch (\Exception $e) {
-            // Handle template validation exceptions
-            $this->errorMessage = $e->getMessage();
-        }
     }
 
     public function editFormation(Formation $formation)
@@ -137,43 +105,6 @@ new class extends Component {
         $this->isCreating = false;
         $this->showFormationReels = false;
         $this->selectedFormationId = $formation->id;
-    }
-
-    public function updateFormation()
-    {
-        $this->validate();
-        $this->errorMessage = '';
-
-        try {
-            // Update the formation using the service
-            $data = [
-                'titre' => $this->titre,
-                'description' => $this->description,
-                'entite_emmeteur_id' => $this->entite_emmeteur_id,
-                'expiration_year' => $this->expiration_year,
-            ];
-
-            // Only pass the file if it's a new upload
-            $certificateFile = null;
-            if ($this->modele_certificat && is_object($this->modele_certificat)) {
-                $certificateFile = $this->modele_certificat;
-            }
-
-            $this->formationService->updateFormation($this->formation->id, $data, $certificateFile);
-
-            $this->isEditing = false;
-            $this->dispatch('formation-updated');
-        } catch (\Exception $e) {
-            // Handle template validation exceptions
-            $this->errorMessage = $e->getMessage();
-        }
-    }
-
-    public function cancelEdit()
-    {
-        $this->isEditing = false;
-        $this->isCreating = false;
-        $this->resetForm();
     }
 
     public function viewFormationReels(Formation $formation)
@@ -195,6 +126,7 @@ new class extends Component {
         // Cette méthode est appelée lorsque l'utilisateur clique sur le bouton de recherche
     }
 
+    #[On('realizationAdded')]
     public function refreshFormationReels($formationId)
     {
         if ($this->selectedFormationId == $formationId) {
@@ -205,6 +137,16 @@ new class extends Component {
     public function regenerateQrCode($formationReelId)
     {
         $this->formationReelService->regenerateQrCodeParticipants($formationReelId);
+    }
+
+    public function addCertificateModele($formationId)
+    {
+        $this->dispatch('add-certificate-model', formationId: $formationId);
+    }
+
+    public function voirParticipant($formationReelId)
+    {
+        $this->dispatch('open-search', id: $formationReelId);
     }
 
     public function render(): mixed
@@ -241,7 +183,7 @@ new class extends Component {
                     </svg>
                     <input
                         type="text"
-                        wire:model="search"
+                        wire:model.live="search"
                         wire:keydown.enter="searchData"
                         placeholder="Rechercher des formations..."
                         class="flex-grow px-3 py-2 text-sm text-gray-800 dark:text-white bg-transparent placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-0"
@@ -256,7 +198,7 @@ new class extends Component {
                 </button>
             </div>
             <div class="flex space-x-2">
-                <flux:button wire:click="createFormation" variant="primary" icon="plus"
+                <flux:button wire:click="$dispatch('update-create-formation', {entiteEmmeteurId: {{ $entite_emmeteur_id }} })" variant="primary" icon="plus"
                              class="bg-green-600 hover:bg-green-700 text-white">
                     {{ __('Nouvelle Formation') }}
                 </flux:button>
@@ -266,112 +208,6 @@ new class extends Component {
                 </flux:button>
             </div>
         </div>
-
-        <!-- Create/Edit Form -->
-        @if($isCreating || $isEditing)
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-                <h2 class="text-xl font-semibold mb-4">{{ $isCreating ? 'Créer une nouvelle formation' : 'Modifier la formation' }}</h2>
-
-                <form wire:submit.prevent="{{ $isCreating ? 'storeFormation' : 'updateFormation' }}" class="space-y-4">
-                    <flux:input
-                        wire:model="titre"
-                        :label="__('Titre')"
-                        type="text"
-                        required
-                        autofocus
-                        :placeholder="__('Titre de la formation')"
-                    />
-
-                    <flux:input
-                        wire:model="description"
-                        :label="__('Description')"
-                        type="text"
-                        required
-                        :placeholder="__('Description de la formation')"
-                    />
-
-                    <flux:input
-                        wire:model="expiration_year"
-                        :label="__('Année d\'expiration (optionnel)')"
-                        type="number"
-                        min="0"
-                        :placeholder="__('Nombre d\'années avant expiration')"
-                    />
-
-                    <div class="space-y-2">
-                        <label for="modele_certificat"
-                               class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                            {{ __('Modèle de certificat') }} <span class="text-red-500">*</span>
-                        </label>
-                        <input
-                            wire:model="modele_certificat"
-                            type="file"
-                            id="modele_certificat"
-                            class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400"
-                            accept=".doc,.docx"
-                            {{ $isCreating ? 'required' : '' }}
-                        />
-                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                            {{ __('Fichier Word uniquement (.doc, .docx)') }}
-                        </p>
-                        @error('modele_certificat')
-                        <p class="mt-1 text-sm text-red-600 dark:text-red-500">{{ $message }}</p>
-                        @enderror
-
-                        @if($isEditing && $formation->modele_certificat)
-                            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                                {{ __('Fichier actuel') }}:
-                                <a href="{{ Storage::url($formation->modele_certificat) }}" target="_blank"
-                                   class="text-blue-600 hover:underline">
-                                    {{ basename($formation->modele_certificat) }}
-                                </a>
-                            </p>
-                        @endif
-                    </div>
-
-                    @if($errorMessage)
-                        <div class="mt-4 p-4 bg-red-50 border border-red-200 rounded-md text-red-600">
-                            <div class="flex items-start">
-                                <div class="flex-shrink-0">
-                                    <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg"
-                                         viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                        <path fill-rule="evenodd"
-                                              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                                              clip-rule="evenodd"/>
-                                    </svg>
-                                </div>
-                                <div class="ml-3">
-                                    <h3 class="text-sm font-medium text-red-800">{{ __('Erreur de validation') }}</h3>
-                                    <div class="mt-2 text-sm text-red-700">
-                                        <p>{{ $errorMessage }}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    @endif
-
-                    <div class="flex items-center gap-4 mt-6">
-                        <div class="flex items-center justify-end space-x-3">
-                            <flux:button type="submit" variant="primary"
-                                         class="w-full bg-green-600 hover:bg-green-700 text-white">
-                                {{ $isCreating ? __('Créer') : __('Enregistrer') }}
-                            </flux:button>
-                            <flux:button wire:click="cancelEdit" variant="outline"
-                                         class="w-full bg-white hover:bg-gray-50 text-red-600 border-red-300 hover:border-red-400">
-                                {{ __('Annuler') }}
-                            </flux:button>
-                        </div>
-
-                        <x-action-message class="me-3" on="formation-created">
-                            {{ __('Formation créée.') }}
-                        </x-action-message>
-                        <x-action-message class="me-3" on="formation-updated">
-                            {{ __('Formation mise à jour.') }}
-                        </x-action-message>
-                    </div>
-                </form>
-            </div>
-        @endif
 
         <!-- Formation Reels List -->
         @if($showFormationReels && $formation)
@@ -407,39 +243,41 @@ new class extends Component {
                                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                 Participants
                             </th>
+                            <th scope="col"
+                                class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                Action
+                            </th>
                         </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
                         @forelse($formation->formationReels as $formationReel)
                             <tr>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                                    {{ $formationReel->date_debut }}
+                                    {{ Carbon::parse($formationReel->date_debut)->format('d/m/Y') }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                                    {{ $formationReel->date_fin }}
+                                    {{ Carbon::parse($formationReel->date_fin)->format('d/m/Y') }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-
-                                    {{--<a href="{{ route('admin.certificates.export', $formationReel->id) }}" target="_blank"
-                                       class="text-blue-600 hover:underline flex items-center">
-                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor"
-                                             viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path>
-                                        </svg>
-                                        {{ __('Télécharger') }}
-                                    </a>--}}
-                                    <flux:button size="sm" wire:click="$dispatch('open-search', { id: {{ $formationReel->id }} })"
-                                                 variant="primary" icon="eye"
+                                    <flux:button size="sm" wire:click="voirParticipant({{ $formationReel->id }} )"
+                                                 variant="primary" icon="eye" title="Voir les participants"
                                                  class="bg-blue-600 hover:bg-blue-700 text-white">
-                                        {{ __('Voir') }}
                                     </flux:button>
                                     <flux:button size="sm" wire:click="regenerateQrCode({{ $formationReel->id }})"
-                                                 variant="primary" icon="qr-code"
+                                                 variant="filled" icon="qr-code" title="Regenerer QR-CODE"
                                                  class="bg-blue-600 hover:bg-blue-700 text-white">
-                                        {{ __('Regenerer QR-CODE') }}
+                                    </flux:button>
+                                    <flux:button size="sm" wire:click="$dispatch('start-add-participant', { formationReelId: {{ $formationReel->id }} })"
+                                                 variant="primary" icon="user-plus" title="Ajouter des participants"
+                                                 color="yellow">
                                     </flux:button>
 
+                                </td>
+                                <td class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider flex justify-end">
+                                    <flux:button size="sm"
+                                        wire:click="$dispatch('openAddRealizationModal', { formationId: {{ $formation->id }}, formationReelId: {{ $formationReel->id }} })"
+                                        variant="primary" icon="pencil" class="bg-green-600 hover:bg-green-700 text-white" title="MOdifier">
+                                    </flux:button>
                                 </td>
                             </tr>
                         @empty
@@ -495,16 +333,23 @@ new class extends Component {
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                     <div class="flex space-x-2">
-                                        <flux:button size="xs" wire:click="editFormation({{ $formation->id }})"
-                                                     variant="outline"
-                                                     icon="pencil-square" class="text-blue-600 hover:text-blue-800"
+                                        <flux:button size="xs" wire:click="$dispatch('update-create-formation', {entiteEmmeteurId: {{ $entite_emmeteur_id }}, formationId: {{ $formation->id }} })"
+                                                     variant="primary"
+                                                     icon="pencil-square"
+                                                     color="zinc"
                                                      tooltip="Modifier"
                                         >
                                         </flux:button>
                                         <flux:button size="xs" wire:click="viewFormationReels({{ $formation->id }})"
-                                                     variant="outline" icon="eye"
-                                                     class="text-green-600 hover:text-green-800"
+                                                     variant="primary" icon="eye"
+                                                     color="blue"
                                                      tooltip="Voir les réalisations"
+                                        >
+                                        </flux:button>
+                                        <flux:button size="xs" wire:click="addCertificateModele({{ $formation->id }})"
+                                                     variant="primary" icon="document"
+                                                     color="{{ $formation->modele_certificat? 'orange' : 'green' }}"
+                                                     tooltip="{{ $formation->modele_certificat? 'Modifier' : 'Ajouter' }} le modèle de certificat"
                                         >
                                         </flux:button>
                                     </div>
@@ -530,15 +375,21 @@ new class extends Component {
     </div>
 
     <!-- Modal for importing formations -->
-    <flux:modal name="import-modal" class="max-w-2xl">
+    <flux:modal name="import-modal" class="max-w-2xl" variant="flyout">
         <livewire:admin.formation.import-formation :entiteEmmeteurId="$entite_emmeteur_id"/>
     </flux:modal>
 
     <!-- Modal for adding a new realization -->
-    <flux:modal name="add-realization-modal" class="max-w-2xl">
+    <flux:modal name="add-realization-modal" class="max-w-2xl"  variant="flyout">
         <livewire:formation.add-formation-realization/>
     </flux:modal>
-
+    <flux:modal name="formation-modal" class="max-w-2xl"  variant="flyout">
+        <livewire:admin.formation.formation-form/>
+    </flux:modal>
+    <div>
+        <livewire:admin.formation.add-certificat-modele/>
+        <livewire:admin.formation.add-participant/>
+    </div>
     <flux:modal name="show-participants" class="max-w-4xl md:max-w-5xl lg:max-w-6xl xl:max-w-7xl mx-auto">
         <livewire:admin.formation.participants/>
     </flux:modal>

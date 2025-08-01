@@ -4,6 +4,7 @@ namespace App\Livewire\Admin;
 
 use App\Constant\EntiteEmmeteursConstant;
 use App\Livewire\ListEntiteEmmeteurs;
+use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Url;
 use Livewire\WithPagination;
@@ -33,6 +34,10 @@ class ListeEtablissement extends ListEntiteEmmeteurs
         //dd($id);
         $centite = $this->service->update(['status' => EntiteEmmeteursConstant::STATUS_VALID], $id);
         $this->dispatch('$refresh');
+        LivewireAlert::title('Validation')
+            ->text('L\'établissement a été bien validé')
+            ->success()
+            ->show();
     }
 
     public function render()

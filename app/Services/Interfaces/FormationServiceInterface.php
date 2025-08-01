@@ -3,9 +3,12 @@
 namespace App\Services\Interfaces;
 
 use App\Models\Formation;
+use App\Services\FormationService;
+use Exception;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Storage;
 
 interface FormationServiceInterface
 {
@@ -55,20 +58,18 @@ interface FormationServiceInterface
      * Create a new formation
      *
      * @param array $data
-     * @param UploadedFile|null $certificateFile
      * @return Formation
      */
-    public function createFormation(array $data, ?UploadedFile $certificateFile = null): Formation;
+    public function createFormation(array $data): Formation;
 
     /**
      * Update a formation
      *
      * @param int $id
      * @param array $data
-     * @param UploadedFile|null $certificateFile
      * @return bool
      */
-    public function updateFormation(int $id, array $data, ?UploadedFile $certificateFile = null): bool;
+    public function updateFormation(int $id, array $data): bool;
 
     /**
      * Delete a formation
@@ -84,4 +85,6 @@ interface FormationServiceInterface
      * @return Formation
      */
     public function saveFormation(array $data, ?UploadedFile $certificateFile = null): Formation;
+
+    public function addCertificatModele(Formation $formation, UploadedFile $certificateFile);
 }

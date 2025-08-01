@@ -12,7 +12,7 @@ use Livewire\Attributes\On;
 #[Layout('components.layouts.app')]
 class DetailEtablissement extends CenterDetails
 {
-    #[On('profile-updated')]
+    #[On('etabissement-updated')]
     public function handleReboot()
     {
         $this->dispatch('$refresh');

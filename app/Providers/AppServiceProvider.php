@@ -2,6 +2,10 @@
 
 namespace App\Providers;
 
+use App\Models\Certificate;
+use App\Models\EntiteEmmeteurs;
+use App\Observers\CertificateObserver;
+use App\Observers\EntiteEmmeteurObserver;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
@@ -24,5 +28,7 @@ class AppServiceProvider extends ServiceProvider
         /*if (request()->getHost() != 'localhost') {
             URL::forceScheme('https');
         }*/
+        EntiteEmmeteurs::observe(EntiteEmmeteurObserver::class);
+        Certificate::observe(CertificateObserver::class);
     }
 }

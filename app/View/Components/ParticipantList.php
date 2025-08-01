@@ -14,7 +14,7 @@ class ParticipantList extends Component
     /**
      * Create a new component instance.
      */
-    public function __construct(public LengthAwarePaginator $participants)
+    public function __construct(public LengthAwarePaginator $participants, public bool $isStandAlone = false, public string $status = '')
     {
         $firtsParticipant = $this->participants->first();
         if ($firtsParticipant) {

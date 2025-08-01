@@ -1,7 +1,5 @@
 @php use App\Constant\EntiteEmmeteursConstant; @endphp
 <div>
-    <x-settings.admin heading="Gestion des établissements" subheading="Detail d'un etablissement"/>
-
     <flux:modal name="edit-center" focusable class="max-w-2xl" variant="flyout">
         <livewire:admin.etablissement.form-etablissemet :center="$center"/>
     </flux:modal>
@@ -25,18 +23,21 @@
                     <div class="flex-grow text-right">
                         <flux:modal.trigger name="edit-center">
                             <flux:button
-                                variant="outline"
+                                variant="primary"
+                                color="blue"
                                 icon="pencil"
                                 size="sm"
                                 class="px-3 py-1.5 text-sm"
                                 tooltip="Modifier le centre"
                             >
+                                Modifier
                             </flux:button>
                         </flux:modal.trigger>
-                        @if ($center->status == EntiteEmmeteursConstant::STATUS_INCOMPLET)
+                        @if ($center->status == EntiteEmmeteursConstant::STATUS_EN_ATTENTE)
                             <flux:button size="sm" tooltip="Valider le centre"
                                          href="{{ route('admin.etablissements-details', $center->id) }}"
-                                         variant="outline" icon="check" class="text-blue-600 hover:text-green-800">
+                                         variant="primary" icon="check" color="green">
+                                Valider
                             </flux:button>
                         @endif
                     </div>

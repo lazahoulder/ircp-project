@@ -45,9 +45,6 @@
                                 <span>{{ $entite->adresse }}</span>
                             </div>
                         </td>
-                        <td class="px-6 py-4 whitespace-normal text-sm font-medium uppercase text-gray-900 dark:text-white">
-                            {{ $entite->status }}
-                        </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
                             <div class="flex items-center">
                                 <svg xmlns="http://www.w3.org/2000/svg"
@@ -69,12 +66,15 @@
                                 <span>STAT: {{ $entite->stat }}</span>
                             </div>
                         </td>
+                        <td class="px-6 py-4 whitespace-normal text-sm font-medium uppercase  {{ $entite->getStatusTextColor() }}">
+                            {{ $entite->status }}
+                        </td>
 
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
 
                             <flux:button size="xs" tooltip="Détail"
-                                         href="{{ route('admin.etablissements-details', $entite->id) }}"
-                                         variant="outline" icon="eye" class="text-blue-600 hover:text-blue-800">
+                                         href="{{ Route::generate('admin.etablissements-details', ['id' => $entite->id]) }}"
+                                         variant="outline" icon="eye" class="text-blue-600 hover:text-blue-800" wire:navigate>
                             </flux:button>
                             @if ($entite->status == \App\Constant\EntiteEmmeteursConstant::STATUS_EN_ATTENTE)
                                 <flux:button size="xs" tooltip="Valider"

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Constant\CertificateConstant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -20,6 +21,7 @@ class Certificate extends Model
         'formation_data',
         'qrcode_url',
         'image_id',
+        'status',
     ];
 
     protected $casts = [
@@ -64,5 +66,34 @@ class Certificate extends Model
     public function getImage(): ?Image
     {
         return $this->image ?? $this->personneCertifies->image;
+    }
+
+    /**
+     * @param EntiteEmmeteurs $entiteEmmeteur
+     * @return void
+     */
+    public function setupStatus(): void
+    {
+        if (in_array($this->status, [CertificateConstant::STATUS_EN_ATTENTE, CertificateConstant::STATUS_INCOMPLET])) {
+            $this->status = CertificateConstant::STATUS_EN_ATTENTE;
+            if (!$this->getImage()) {
+                $this->status = CertificateConstant::STATUS_INCOMPLET;
+            }
+        } else {
+            $this->status = CertificateConstant::STATUS_VALID;
+        }
+    }
+
+    public function getStatusTextColor()
+    {
+        if (CertificateConstant::STATUS_VALID === $this->status) {
+            return 'text-green-500';
+        }
+
+        if (CertificateConstant::STATUS_EN_ATTENTE === $this->status) {
+            return 'text-yellow-500';
+        }
+
+        return 'text-red-500';
     }
 }

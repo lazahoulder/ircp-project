@@ -97,57 +97,28 @@ class FormationService implements FormationServiceInterface
     }
 
     /**
+     * @throws Exception
+     */
+    public function addCertificatModele(Formation $formation, UploadedFile $certificateFile): void
+    {
+        $formationData = [];
+        $formationData['modele_certificat'] = $this->treatCertificatUpdate($certificateFile, $formation);
+
+
+        $formation->update($formationData);
+    }
+
+    /**
      * Create a new formation
      *
      * @param array $data
-     * @param UploadedFile|null $certificateFile
      * @return Formation
      * @throws Exception If the certificate template is invalid
      */
-    public function createFormation(array $data, ?UploadedFile $certificateFile = null): Formation
+    public function createFormation(array $data): Formation
     {
-        $formationData = $data;
 
-        if ($certificateFile) {
-            try {
-                // Get the temporary file path from the uploaded file
-                $tempPath = $this->getF($certificateFile);
-
-                // Validate the certificate template using the temporary file
-                $validationResult = $this->certificateService->validateCertificateTemplate($tempPath);
-
-                // If validation passes, store the file permanently
-                $certificatePath = $certificateFile->store('certificats', 'public');
-                $formationData['modele_certificat'] = $certificatePath;
-
-                if (!$validationResult['valid']) {
-                    // Delete the temporary file
-                    if (file_exists($tempPath)) {
-                        unlink($tempPath);
-                    }
-
-                    // Throw an exception with details about missing placeholders
-                    throw new Exception('Le modèle de certificat ne contient pas tous les placeholders requis: ' .
-                        implode(', ', $validationResult['missing']));
-                }
-
-
-                // If valid, store the file permanently
-                $certificatePath = $certificateFile->storeAs('certificats', time() . '.' . $certificateFile->getClientOriginalExtension(), 'public');
-                $formationData['modele_certificat'] = $certificatePath;
-
-                // Delete the temporary file
-                Storage::delete($tempPath);
-            } catch (Exception $e) {
-                // Delete the temporary file in case of any error
-                Storage::delete($tempPath);
-
-                // Rethrow the exception
-                throw $e;
-            }
-        }
-
-        return $this->formationRepository->create($formationData);
+        return $this->formationRepository->create($data);
     }
 
     /**
@@ -159,7 +130,7 @@ class FormationService implements FormationServiceInterface
      * @return bool
      * @throws Exception If the certificate template is invalid
      */
-    public function updateFormation(int $id, array $data, ?UploadedFile $certificateFile = null): bool
+    public function updateFormation(int $id, array $data): bool
     {
         $formation = $this->formationRepository->findById($id);
         if (!$formation) {
@@ -167,11 +138,6 @@ class FormationService implements FormationServiceInterface
         }
 
         $formationData = $data;
-
-        if ($certificateFile) {
-            $formationData['modele_certificat'] = $this->treatCertificatUpdate($certificateFile, $formation);
-        }
-
 
         return $this->formationRepository->update($id, $formationData);
     }
@@ -254,8 +220,8 @@ class FormationService implements FormationServiceInterface
                 Storage::delete($tempPath);
 
                 // Throw an exception with details about missing placeholders
-                throw new Exception('Le modèle de certificat ne contient pas tous les placeholders requis: ' .
-                    implode(', ', $validationResult['missing']));
+                throw new Exception('Le modèle de certificat ne contient pas tous les placeholders requis: <b> ' .
+                    implode(', ', $validationResult['missing']) . '</b>');
             }
 
             // Delete the old file if it exists

@@ -19,7 +19,7 @@
                 </h1>
 
                 <p class="text-lg text-gray-300 max-w-xl">
-                    La plateforme officielle de l’IRCP Madagascar pour garantir la crédibilité des certifications
+                    La plateforme officielle de l’IRCP pour garantir la crédibilité des certifications
                     professionnelles.
                 </p>
 
@@ -131,7 +131,7 @@
 
     <section class="text-white py-16 px-6 md:px-12">
         <div class="max-w-5xl mx-auto text-center">
-            <h2 class="text-2xl md:text-3xl font-bold mb-4">🏢 IRCP Madagascar – Un acteur clé de la certification
+            <h2 class="text-2xl md:text-3xl font-bold mb-4">🏢 IRCP – Un acteur clé de la certification
                 professionnelle</h2>
             <p class="text-gray-300 text-lg mb-8 max-w-3xl mx-auto">
                 Depuis sa création, l’IRCP œuvre pour le développement des compétences à travers des programmes de

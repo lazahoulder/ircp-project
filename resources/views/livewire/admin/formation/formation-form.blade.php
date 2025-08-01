@@ -1,5 +1,21 @@
-<div>
-    <form wire:submit.prevent="{{ $isCreating ? 'storeFormation' : 'updateFormation' }}" class="space-y-4">
+<div class="space-y-6 h-full flex flex-col border border-gray-200 dark:border-gray-700 rounded-lg p-8 shadow-lg">
+    <h4>
+        Saisissez les informations
+    </h4>
+    <form wire:submit.prevent="storeFormation" class="space-y-4">
+        @if(is_null($entite_emmeteur_id))
+            <flux:select
+                wire:model="entite_emmeteur_id"
+                :label="__('Centre de formation')"
+                required
+                autofocus
+                :placeholder="__('Centre de formation')"
+            >
+                @foreach($entityChoices as $entity)
+                    <flux:select.option value="{{ $entity['id'] }}">{{ $entity['nomination'] }}</flux:select.option>
+                @endforeach
+            </flux:select>
+        @endif
         <flux:input
             wire:model="titre"
             :label="__('Titre')"
@@ -25,36 +41,6 @@
             :placeholder="__('Nombre d\'années avant expiration')"
         />
 
-        <div class="space-y-2">
-            <label for="modele_certificat"
-                   class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                {{ __('Modèle de certificat') }} <span class="text-red-500">*</span>
-            </label>
-            <input
-                wire:model="modele_certificat"
-                type="file"
-                id="modele_certificat"
-                class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400"
-                accept=".doc,.docx"
-                {{ $isCreating ? 'required' : '' }}
-            />
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                {{ __('Fichier Word uniquement (.doc, .docx)') }}
-            </p>
-            @error('modele_certificat')
-            <p class="mt-1 text-sm text-red-600 dark:text-red-500">{{ $message }}</p>
-            @enderror
-
-            @if($isEditing && $formation->modele_certificat)
-                <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                    {{ __('Fichier actuel') }}:
-                    <a href="{{ Storage::url($formation->modele_certificat) }}" target="_blank"
-                       class="text-blue-600 hover:underline">
-                        {{ basename($formation->modele_certificat) }}
-                    </a>
-                </p>
-            @endif
-        </div>
 
         @if($errorMessage)
             <div class="mt-4 p-4 bg-red-50 border border-red-200 rounded-md text-red-600">
@@ -81,7 +67,7 @@
             <div class="flex items-center justify-end space-x-3">
                 <flux:button type="submit" variant="primary"
                              class="w-full bg-green-600 hover:bg-green-700 text-white">
-                    {{ $isCreating ? __('Créer') : __('Enregistrer') }}
+                    {{  __('Enregistrer') }}
                 </flux:button>
                 <flux:button wire:click="cancelEdit" variant="outline"
                              class="w-full bg-white hover:bg-gray-50 text-red-600 border-red-300 hover:border-red-400">

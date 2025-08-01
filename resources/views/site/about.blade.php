@@ -7,10 +7,10 @@
         <div class="max-w-7xl mx-auto">
             <div class="text-center mb-12">
                 <h1 class="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white leading-tight">
-                    À propos de l'IRCP Madagascar
+                    À propos de l'IRCP
                 </h1>
                 <p class="mt-4 text-lg text-gray-300 max-w-3xl mx-auto">
-                    Institut de Reconnaissance des Compétences Professionnelles - Un acteur clé de la certification à Madagascar.
+                    IRCP : International Registry for Certified Professional
                 </p>
             </div>
         </div>
@@ -22,7 +22,7 @@
                 <div>
                     <h2 class="text-2xl md:text-3xl font-bold mb-6 text-white">Notre Mission</h2>
                     <p class="text-gray-300 mb-4">
-                        L'IRCP Madagascar a pour mission de promouvoir et de valoriser les compétences professionnelles à travers un système de certification reconnu et fiable.
+                        L'IRCP a pour mission de promouvoir et de valoriser les compétences professionnelles à travers un système de certification reconnu et fiable.
                     </p>
                     <p class="text-gray-300">
                         Nous œuvrons pour le développement des compétences à travers des programmes de formation, d'évaluation et de certification reconnus, contribuant ainsi à l'amélioration de la qualité de la main-d'œuvre à Madagascar.
@@ -70,7 +70,7 @@
                 <h2 class="text-2xl md:text-3xl font-bold mb-8 text-white text-center">Notre Histoire</h2>
                 <div class="bg-gray-900 p-8 rounded-xl border border-gray-800">
                     <p class="text-gray-300 mb-4">
-                        Fondé en [année de fondation], l'IRCP Madagascar est né de la volonté de combler le fossé entre les compétences acquises et leur reconnaissance sur le marché du travail.
+                        Fondé en [année de fondation], l'IRCP est né de la volonté de combler le fossé entre les compétences acquises et leur reconnaissance sur le marché du travail.
                     </p>
                     <p class="text-gray-300 mb-4">
                         Au fil des années, nous avons développé un réseau de partenaires comprenant des entreprises, des institutions de formation et des organismes gouvernementaux, tous engagés dans la promotion des compétences professionnelles.
@@ -87,7 +87,7 @@
         <div class="max-w-5xl mx-auto text-center">
             <h2 class="text-2xl md:text-3xl font-bold mb-8 text-white">Notre Équipe</h2>
             <p class="text-gray-300 mb-12 max-w-3xl mx-auto">
-                L'IRCP Madagascar est composé d'une équipe de professionnels dévoués et expérimentés, passionnés par le développement des compétences et l'excellence professionnelle.
+                L'IRCP est composé d'une équipe de professionnels dévoués et expérimentés, passionnés par le développement des compétences et l'excellence professionnelle.
             </p>
 
             <div class="grid md:grid-cols-3 gap-8">

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Contract\Utilities\ExcelReaderInterface;
 use App\Models\Certificate;
 use App\Models\Formation;
 use App\Models\FormationReel;
@@ -9,6 +10,7 @@ use App\Models\PersonneCertifies;
 use App\Contract\Repositories\FormationReelRepositoryInterface;
 use App\Contract\Repositories\FormationRepositoryInterface;
 use App\Services\Interfaces\FormationReelServiceInterface;
+use App\Utilities\ParticipantsFormatDataUtility;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
@@ -40,6 +42,7 @@ class FormationReelService implements FormationReelServiceInterface
         FormationRepositoryInterface $formationRepository,
         private PersonneCertifieService $personneCertifieService,
         private CertificateService $certificateService,
+        private ExcelReaderInterface $excelReader
     ) {
         $this->formationReelRepository = $formationReelRepository;
         $this->formationRepository = $formationRepository;
@@ -94,28 +97,25 @@ class FormationReelService implements FormationReelServiceInterface
      * @param int $formationId
      * @param string $dateDebut
      * @param string $dateFin
-     * @param UploadedFile $participantsFile
      * @return FormationReel
      */
     public function createFormationReel(
         int $formationId,
         string $dateDebut,
         string $dateFin,
-        UploadedFile $participantsFile
     ): FormationReel {
         // Store the Excel file
-        $filePath = $participantsFile->store('realizations', 'public');
+        /*$filePath = $participantsFile->store('realizations', 'public');*/
 
         // Create a new FormationReel
         $formationReel = $this->formationReelRepository->create([
             'formation_id' => $formationId,
             'date_debut' => $dateDebut,
             'date_fin' => $dateFin,
-            'participants_file' => $filePath,
         ]);
 
         // Process the participants file
-        $this->processParticipantsFile($formationReel, $participantsFile);
+        //$this->processParticipantsFile($formationReel, $participantsFile);
 
         return $formationReel;
     }
@@ -129,133 +129,58 @@ class FormationReelService implements FormationReelServiceInterface
      */
     public function processParticipantsFile(FormationReel $formationReel, UploadedFile $participantsFile): bool
     {
-        $fullPath = Storage::disk('public')->path($formationReel->participants_file);
-        $fileExtension = strtolower($participantsFile->getClientOriginalExtension());
+        $fullPath = $participantsFile->getRealPath();
+        $requiredColumns = ['PHOTO', 'NUMERO CERTIFICAT', 'NOM', 'PRENOM',  'DATE DE NAISSANCE', 'NATIONALITE'];
 
+
+        // Required columns
+        $excelResult = $this->processExcel($fullPath, $requiredColumns);
+        //dd($excelResult);
+        $datas = $excelResult['data'];
+        $errors = $excelResult['headerErrors'];
+
+        if (count($errors) > 0) {
+            $errorHtml = '<ul class="list-disc pl-5">';
+            foreach ($errors as $error) {
+                $errorHtml .= '<li>' . htmlspecialchars($error['name']) . ' : ' . htmlspecialchars(implode(', ', $error['errors'])) . '</li>';
+            }
+            $errorHtml .= '</ul>';
+
+            throw new \Exception('IL y des arreurs sur le fichier :<br/> ' . $errorHtml);
+        }
+
+
+        foreach ($datas as $record) {
+            foreach ($record as $value) {
+                try {
+                    $personneCertifieData = ParticipantsFormatDataUtility::formatPersonneCertifieData($value);
+                    $condition = ParticipantsFormatDataUtility::formatPersonneCertifieCondition($value);
+
+                    $personneCertifie = $this->personneCertifieService->upCreate($personneCertifieData, $condition);
+
+                    $certificateData = ParticipantsFormatDataUtility::formatCertificateData($value, $requiredColumns);
+
+
+                    $certificat = $this->certificateService->createCertificateFromFormation($formationReel, $personneCertifie, $certificateData);
+
+                } catch (\Exception $e) {
+                    throw new \Exception("Erreur à la ligne " . $e->getMessage());
+                }
+            }
+        }
+
+        return true;
+    }
+
+    public function processExcel(string $filePath, array $requiredColumn, string $storagePath = 'images'): array
+    {
         try {
-            // Required columns
-            $requiredColumns = ['nom', 'prenom', 'adresse', 'date de naissance', 'date de certification'];
-
-            // Get the headers and data based on file type
-            $headers = [];
-            $records = [];
-
-            if ($fileExtension === 'csv') {
-                // Read CSV file
-                $csv = Reader::createFromPath($fullPath, 'r');
-                $csv->setHeaderOffset(0);
-
-                // Get headers
-                $headers = $csv->getHeader();
-
-                // Get records
-                $records = $csv->getRecords();
-            } else {
-                // Read Excel file
-                $data = Excel::toArray([], $fullPath);
-
-                if (!empty($data) && isset($data[0]) && count($data[0]) > 0) {
-                    // Get headers from first row
-                    $headers = $data[0][0];
-
-                    // Get records (skip header row)
-                    $rows = array_slice($data[0], 1);
-
-                    foreach ($rows as $row) {
-                        $record = [];
-                        foreach ($headers as $index => $header) {
-                            $record[strtolower($header)] = $row[$index] ?? null;
-                        }
-                        $records[] = $record;
-                    }
-                }
+            if (!Storage::exists($storagePath)) {
+                Storage::makeDirectory($storagePath);
             }
-
-            // Validate required columns
-            $missingColumns = array_diff($requiredColumns, array_map('strtolower', $headers));
-
-            if (!empty($missingColumns)) {
-                throw new \Exception('Le fichier doit contenir les colonnes suivantes: ' . implode(', ', $requiredColumns));
-            }
-
-            // Get the formation
-            $formation = $this->formationRepository->findById($formationReel->formation_id);
-
-            // Get the year of formation from date_fin
-            $formationYear = Carbon::parse($formationReel->date_fin)->format('Y');
-
-            // Count existing certificates for this formation this year
-            $existingCertificatesCount = $this->formationReelRepository->countCertificatesForFormationInYear(
-                $formation->id,
-                $formationYear
-            );
-
-            // Process each record from either CSV or Excel
-            foreach ($records as $record) {
-                // Normalize keys to lowercase for Excel records
-                $recordData = [];
-                foreach ($record as $key => $value) {
-                    $recordData[strtolower($key)] = $value;
-                }
-
-                // Handle image if present
-                $imageId = null;
-                if (isset($recordData['photo']) && !empty($recordData['photo'])) {
-                    try {
-                        $imageUrl = $recordData['photo'];
-                        $imageContents = file_get_contents($imageUrl);
-                        if ($imageContents !== false) {
-                            $imageName = 'participant_' . uniqid() . '.jpg';
-                            $path = 'participants/' . $formationReel->id . '/' . $imageName;
-                            Storage::disk('public')->put($path, $imageContents);
-
-                            // Create an Image record
-                            $image = \App\Models\Image::create([
-                                'file_name' => $imageName,
-                                'file_path' => $path,
-                            ]);
-
-                            $imageId = $image->id;
-                        }
-                    } catch (\Exception $e) {
-                        // Log error but continue processing other records
-                        \Log::error('Erreur lors du téléchargement de l\'image: ' . $e->getMessage());
-                    }
-                }
-
-                // Create or update PersonneCertifies
-                $personneCertifies = $this->personneCertifieService->upCreate(
-                    [
-                        'nom' => $recordData['nom'],
-                        'prenom' => $recordData['prenom'],
-                    ],
-                    [
-                        'adresse' => $recordData['adresse'],
-                        'date_naissance' => Carbon::parse($recordData['date de naissance'])->format('Y-m-d'),
-                        'image_id' => $imageId,
-                    ]
-                );
-
-                // Generate certificate number
-                // Format: 3 first letters of formation + number of trainees for this formation this year + year of formation
-                $formationPrefix = strtoupper(substr($formation->titre, 0, 3));
-                $certificateNumber = $existingCertificatesCount + 1;
-                $certificateNumberPadded = str_pad($certificateNumber, 3, '0', STR_PAD_LEFT);
-                $numeroComplet = $formationPrefix . '-' . $certificateNumberPadded . '-' . $formationYear;
-
-                // Create Certificate
-                Certificate::create([
-                    'numero_certificat' => $numeroComplet,
-                    'formation_reel_id' => $formationReel->id,
-                    'personne_certifies_id' => $personneCertifies->id,
-                    'date_certification' => Carbon::parse($recordData['date de certification'])->format('Y-m-d'),
-                ]);
-
-                $existingCertificatesCount++;
-            }
-
-            return true;
-        } catch (\Exception $e) {
+            return $this->excelReader->read($filePath, $requiredColumn);
+        } catch (Exception $e) {
+            Log::error("Erreur lors du traitement du fichier Excel : " . $e->getMessage());
             throw $e;
         }
     }

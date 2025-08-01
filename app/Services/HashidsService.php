@@ -2,13 +2,15 @@
 
 namespace App\Services;
 
+use Hashids\Hashids;
+
 class HashidsService
 {
     protected $hashids;
 
     public function __construct()
     {
-        $this->hashids = new Hashids(env('HASHIDS_SALT', 'votre-cle-secrete'), 8);
+        $this->hashids = new Hashids();
     }
 
     public function encode($id)

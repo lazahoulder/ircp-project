@@ -47,14 +47,12 @@ interface FormationReelServiceInterface
      * @param int $formationId
      * @param string $dateDebut
      * @param string $dateFin
-     * @param UploadedFile $participantsFile
      * @return FormationReel
      */
     public function createFormationReel(
         int $formationId,
         string $dateDebut,
-        string $dateFin,
-        UploadedFile $participantsFile
+        string $dateFin
     ): FormationReel;
 
     /**
